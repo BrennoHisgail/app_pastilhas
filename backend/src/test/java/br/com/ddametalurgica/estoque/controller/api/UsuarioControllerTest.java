@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -90,7 +91,7 @@ class UsuarioControllerTest {
     void criaComLocation() throws Exception {
         when(service.criar(any())).thenReturn(resposta(7L, "nova@dda.com.br"));
 
-        mvc.perform(post("/api/usuarios")
+        mvc.perform(post("/api/usuarios").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(
                                 new UsuarioCreateRequest("Nova", "nova@dda.com.br", "senha12345", PerfilUsuario.OPERADOR))))
@@ -102,7 +103,7 @@ class UsuarioControllerTest {
     @Test
     @DisplayName("POST com senha curta devolve 400")
     void recusaSenhaCurta() throws Exception {
-        mvc.perform(post("/api/usuarios")
+        mvc.perform(post("/api/usuarios").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(
                                 new UsuarioCreateRequest("Nova", "nova@dda.com.br", "123", PerfilUsuario.OPERADOR))))
@@ -117,7 +118,7 @@ class UsuarioControllerTest {
     void recusaEmailDuplicado() throws Exception {
         when(service.criar(any())).thenThrow(new RegraNegocioException("Ja existe um usuario com o email x@dda.com.br."));
 
-        mvc.perform(post("/api/usuarios")
+        mvc.perform(post("/api/usuarios").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(
                                 new UsuarioCreateRequest("X", "x@dda.com.br", "senha12345", PerfilUsuario.OPERADOR))))
@@ -130,7 +131,7 @@ class UsuarioControllerTest {
     void atualiza() throws Exception {
         when(service.atualizar(eq(1L), any())).thenReturn(resposta(1L, "fulana@dda.com.br"));
 
-        mvc.perform(put("/api/usuarios/1")
+        mvc.perform(put("/api/usuarios/1").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(new UsuarioUpdateRequest("Fulana", PerfilUsuario.ADMIN))))
                 .andExpect(status().isOk())
@@ -140,7 +141,7 @@ class UsuarioControllerTest {
     @Test
     @DisplayName("PATCH senha devolve 204")
     void alteraSenha() throws Exception {
-        mvc.perform(patch("/api/usuarios/1/senha")
+        mvc.perform(patch("/api/usuarios/1/senha").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(new AlterarSenhaRequest("novaSenha123"))))
                 .andExpect(status().isNoContent());
@@ -151,7 +152,7 @@ class UsuarioControllerTest {
     @Test
     @DisplayName("DELETE /api/usuarios/{id} devolve 204")
     void inativa() throws Exception {
-        mvc.perform(delete("/api/usuarios/1"))
+        mvc.perform(delete("/api/usuarios/1").with(csrf()))
                 .andExpect(status().isNoContent());
 
         verify(service).inativar(1L);
@@ -163,7 +164,7 @@ class UsuarioControllerTest {
         org.mockito.Mockito.doThrow(new RegraNegocioException("Voce nao pode inativar o proprio usuario."))
                 .when(service).inativar(1L);
 
-        mvc.perform(delete("/api/usuarios/1"))
+        mvc.perform(delete("/api/usuarios/1").with(csrf()))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.detail").value("Voce nao pode inativar o proprio usuario."));
     }
@@ -173,7 +174,7 @@ class UsuarioControllerTest {
     void reativa() throws Exception {
         when(service.reativar(1L)).thenReturn(resposta(1L, "fulana@dda.com.br"));
 
-        mvc.perform(patch("/api/usuarios/1/reativar"))
+        mvc.perform(patch("/api/usuarios/1/reativar").with(csrf()))
                 .andExpect(status().isOk());
     }
 }

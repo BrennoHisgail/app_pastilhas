@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Usuários')}"></head>
+<body>
+
+<header th:replace="~{fragments/layout :: topbar('usuarios')}"></header>
+
+<main class="pagina" id="conteudo">
+
+    <div class="pagina__cabecalho">
+        <h1 class="pagina__titulo">Usuários</h1>
+        <span class="pagina__legenda" id="resumo">carregando</span>
+        <span class="espacador"></span>
+        <a class="botao botao--primario" th:href="@{/usuarios/novo}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+            </svg>
+            Novo usuário
+        </a>
+    </div>
+
+    <form class="filtros" id="formFiltros" onsubmit="return false">
+        <div class="campo campo--largo">
+            <label class="campo__rotulo" for="busca">Buscar por nome ou e-mail</label>
+            <input type="search" id="busca" name="busca" placeholder="ex.: maria, @dda.com.br">
+        </div>
+
+        <label class="caixa-selecao" for="inativos">
+            <input type="checkbox" id="inativos" name="inativos">
+            Mostrar inativados
+        </label>
+
+        <span class="espacador"></span>
+        <span class="rota" id="rota">GET /api/usuarios</span>
+    </form>
+
+    <section class="cartao">
+        <div class="tabela-rolavel">
+            <table class="tabela">
+                <caption class="oculto">Usuários cadastrados</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Nome</th>
+                    <th scope="col">E-mail</th>
+                    <th scope="col">Perfil</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col" class="acoes">Ações</th>
+                </tr>
+                </thead>
+                <tbody id="corpoTabela"></tbody>
+            </table>
+        </div>
+
+        <div class="vazio oculto" id="vazio">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B4B0A8" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <div class="vazio__titulo">Nenhum usuário encontrado</div>
+            <div class="vazio__texto">Ajuste a busca ou limpe os filtros.</div>
+        </div>
+
+        <div class="paginacao">
+            <button type="button" class="botao botao--secundario" id="anterior" disabled>Anterior</button>
+            <button type="button" class="botao botao--secundario" id="proxima" disabled>Próxima</button>
+            <span id="infoPagina">–</span>
+        </div>
+    </section>
+
+    <div class="aviso aviso--erro oculto" id="erro" role="alert"></div>
+</main>
+
+<footer th:replace="~{fragments/layout :: rodape}"></footer>
+<div th:replace="~{fragments/layout :: dialogo}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/usuarios.js}"></script>
+</body>
+</html>

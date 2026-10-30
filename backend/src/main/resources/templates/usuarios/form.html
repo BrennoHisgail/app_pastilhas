@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Cadastro de usuário')}"></head>
+<body>
+
+<header th:replace="~{fragments/layout :: topbar('usuarios')}"></header>
+
+<main class="pagina" id="conteudo">
+
+    <div class="pagina__cabecalho">
+        <a class="botao botao--icone" th:href="@{/usuarios}" aria-label="Voltar para usuários">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16181A" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 12H5"></path>
+                <path d="m12 19-7-7 7-7"></path>
+            </svg>
+        </a>
+        <h1 class="pagina__titulo" id="titulo">Novo usuário</h1>
+        <span class="pagina__legenda">Acesso ao sistema</span>
+    </div>
+
+    <div class="colunas">
+
+        <div class="coluna--principal" style="display: flex; flex-direction: column; gap: 16px;">
+
+            <form class="cartao" id="formUsuario" novalidate>
+                <div class="cartao__corpo" style="display: flex; flex-direction: column; gap: 22px;">
+
+                    <div class="grupo-secao">
+                        <div class="grupo-secao__titulo">Dados do usuário</div>
+                        <div class="linha-campos">
+                            <div class="campo campo--largo">
+                                <label class="campo__rotulo--forte" for="nome">Nome</label>
+                                <input type="text" id="nome" name="nome" maxlength="120" required>
+                                <span class="campo__erro oculto" data-erro="nome"></span>
+                            </div>
+                            <div class="campo campo--largo">
+                                <label class="campo__rotulo--forte" for="email">E-mail</label>
+                                <input type="email" id="email" name="email" maxlength="160" required>
+                                <span class="campo__ajuda" id="ajudaEmail">Usado para entrar no sistema</span>
+                                <span class="campo__erro oculto" data-erro="email"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grupo-secao">
+                        <div class="grupo-secao__titulo">Acesso</div>
+                        <div class="linha-campos">
+                            <div class="campo" style="width: 220px;">
+                                <label class="campo__rotulo--forte" for="perfil">Perfil</label>
+                                <select id="perfil" name="perfil" required>
+                                    <option value="OPERADOR">Operador</option>
+                                    <option value="ADMIN">Administrador</option>
+                                </select>
+                                <span class="campo__erro oculto" data-erro="perfil"></span>
+                            </div>
+                            <div class="campo" style="width: 240px;" id="campoSenha">
+                                <label class="campo__rotulo--forte" for="senha">Senha</label>
+                                <input type="password" id="senha" name="senha" autocomplete="new-password" required>
+                                <span class="campo__ajuda">Mínimo de 8 caracteres</span>
+                                <span class="campo__erro oculto" data-erro="senha"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="aviso aviso--erro oculto" id="erro" role="alert"></div>
+                    <div class="aviso aviso--ok oculto" id="sucesso" role="status"></div>
+
+                    <div class="acoes-formulario">
+                        <button type="submit" class="botao botao--primario" id="salvar">Salvar usuário</button>
+                        <a class="botao botao--secundario" th:href="@{/usuarios}">Cancelar</a>
+                        <span class="espacador"></span>
+                        <span class="rota" id="rota">POST /api/usuarios</span>
+                    </div>
+                </div>
+            </form>
+
+            <!-- So aparece na edicao -->
+            <form class="cartao oculto" id="formSenha" novalidate>
+                <div class="cartao__corpo" style="display: flex; flex-direction: column; gap: 18px;">
+                    <div class="grupo-secao">
+                        <div class="grupo-secao__titulo">Redefinir senha</div>
+                        <div class="linha-campos">
+                            <div class="campo" style="width: 240px;">
+                                <label class="campo__rotulo--forte" for="novaSenha">Nova senha</label>
+                                <input type="password" id="novaSenha" name="novaSenha" autocomplete="new-password">
+                                <span class="campo__ajuda">Mínimo de 8 caracteres</span>
+                                <span class="campo__erro oculto" data-erro="novaSenha"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="acoes-formulario">
+                        <button type="submit" class="botao botao--secundario" id="salvarSenha">Trocar senha</button>
+                        <span class="espacador"></span>
+                        <span class="rota" id="rotaSenha"></span>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <aside class="coluna--lateral" style="display: flex; flex-direction: column; gap: 16px;">
+            <section class="cartao" style="border-left: 3px solid var(--steel);">
+                <div class="cartao__corpo">
+                    <div class="campo__rotulo">O que cada perfil faz</div>
+                    <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; color: var(--muted); line-height: 1.55;">
+                        <span><strong style="color: var(--ink);">Operador</strong><br>
+                            Lança entradas e saídas e consulta o catálogo e o painel.</span>
+                        <span><strong style="color: var(--ink);">Administrador</strong><br>
+                            Tudo do operador, mais cadastro de pastilhas e gestão de usuários.</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="cartao">
+                <div class="cartao__corpo">
+                    <div class="campo__rotulo">Respostas do servidor</div>
+                    <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 9px; font-size: 12.5px; color: var(--muted); line-height: 1.5;">
+                        <span><strong style="color: var(--ok);">201</strong> &nbsp;Usuário criado</span>
+                        <span><strong style="color: var(--alert);">400</strong> &nbsp;Campo vazio, e-mail inválido ou senha curta</span>
+                        <span><strong style="color: var(--alert);">409</strong> &nbsp;E-mail já cadastrado</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: rodape}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<!-- Vem vazio no cadastro novo e com o id quando é edição -->
+<script th:inline="javascript">
+    window.USUARIO_ID = /*[[${usuarioId}]]*/ '';
+</script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/usuario-form.js}"></script>
+</body>
+</html>

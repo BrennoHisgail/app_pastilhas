@@ -44,4 +44,26 @@ public class PaginaController {
     public String movimentacoes() {
         return "movimentacoes";
     }
+
+    @GetMapping("/indicadores")
+    public String indicadores() {
+        return "indicadores";
+    }
+
+    @GetMapping("/usuarios")
+    public String usuarios() {
+        return "usuarios/lista";
+    }
+
+    @GetMapping("/usuarios/novo")
+    public String novoUsuario(Model model) {
+        model.addAttribute("usuarioId", "");
+        return "usuarios/form";
+    }
+
+    @GetMapping("/usuarios/{id}/editar")
+    public String editarUsuario(@PathVariable Long id, Model model) {
+        model.addAttribute("usuarioId", id);
+        return "usuarios/form";
+    }
 }

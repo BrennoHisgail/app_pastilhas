@@ -3,18 +3,22 @@ package br.com.ddametalurgica.estoque.service;
 import br.com.ddametalurgica.estoque.domain.Movimentacao;
 import br.com.ddametalurgica.estoque.domain.Pastilha;
 import br.com.ddametalurgica.estoque.domain.TipoMovimentacao;
+import br.com.ddametalurgica.estoque.domain.Usuario;
 import br.com.ddametalurgica.estoque.dto.MovimentacaoRequest;
 import br.com.ddametalurgica.estoque.dto.MovimentacaoResponse;
 import br.com.ddametalurgica.estoque.exception.RecursoNaoEncontradoException;
 import br.com.ddametalurgica.estoque.exception.RegraNegocioException;
 import br.com.ddametalurgica.estoque.repository.MovimentacaoRepository;
 import br.com.ddametalurgica.estoque.repository.PastilhaRepository;
+import br.com.ddametalurgica.estoque.security.UsuarioDetails;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -94,9 +98,19 @@ public class MovimentacaoService {
                 dados.quantidade(),
                 textoOuNulo(dados.documento()),
                 textoOuNulo(dados.origemDestino()),
-                textoOuNulo(dados.observacao()));
+                textoOuNulo(dados.observacao()),
+                usuarioLogado());
 
         return MovimentacaoResponse.de(repository.save(movimentacao));
+    }
+
+    // Quem esta lancando, ou null se ninguem estiver logado
+    private Usuario usuarioLogado() {
+        Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
+        if (autenticacao == null || !(autenticacao.getPrincipal() instanceof UsuarioDetails detalhes)) {
+            return null;
+        }
+        return detalhes.getUsuario();
     }
 
     // A coluna do banco guarda 3 casas decimais, entao 4 unidades vem como

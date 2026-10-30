@@ -16,7 +16,7 @@ Equipe: Brenno Meurer, Vinícius Barcellos, Pedro Ptelzi e Pedro Luis
 | Framework | Spring Boot 3.5.3 |
 | Banco de dados | Spring Data JPA + PostgreSQL 16 |
 | Migrations | Flyway |
-| Segurança | Spring Security (ainda liberado, fecha na sprint 4) |
+| Segurança | Spring Security (login por sessão, perfis ADMIN e OPERADOR, senha em BCrypt) |
 | Telas | Thymeleaf + CSS próprio |
 | Documentação da API | springdoc-openapi (Swagger UI) |
 
@@ -41,16 +41,18 @@ cd backend
 ```
 
 Na primeira execução o Flyway cria as tabelas e já insere algumas pastilhas
-de exemplo, então o sistema abre com dados.
+de exemplo e dois usuários, então o sistema abre com dados.
 
-Com a aplicação rodando:
+Abra http://localhost:8080 e entre com um dos usuários de demonstração:
 
-| Tela | Endereço |
-| --- | --- |
-| Painel | http://localhost:8080/ |
-| Pastilhas | http://localhost:8080/pastilhas |
-| Movimentações | http://localhost:8080/movimentacoes |
-| Swagger (documentação da API) | http://localhost:8080/swagger-ui.html |
+| Perfil | E-mail | Senha | O que pode fazer |
+|---|---|---|---|
+| Administrador | `admin@dda.com.br` | `admin123` | tudo, inclusive cadastro de pastilhas e de usuários |
+| Operador | `operador@dda.com.br` | `operador123` | lançar entradas e saídas, consultar e exportar |
+
+A documentação da API (Swagger) fica em http://localhost:8080/swagger-ui.html e
+abre sem login. Para testar as rotas por ela, entre no sistema antes na mesma
+janela do navegador.
 
 Se o seu PostgreSQL estiver em outro endereço ou com outra senha, dá para mudar
 sem mexer no código, usando as variáveis de ambiente `DB_HOST`, `DB_PORT`,
@@ -66,34 +68,63 @@ cd backend
 ./mvnw test                  # no Windows: mvnw.cmd test
 ```
 
-São 122 testes divididos em quatro níveis:
+São 176 testes divididos em quatro níveis:
 
 | Nível | O que cobre | Onde fica |
 |---|---|---|
-| Entidade | Regras que ficam na `Pastilha` e na `Movimentacao`: soma e subtração do saldo, nível mínimo, valor em estoque | `domain/` |
-| Serviço | Regras de negócio com os repositórios simulados (Mockito): código duplicado, saldo insuficiente, pastilha inativa, período invertido | `service/` |
+| Entidade | Regras que ficam na `Pastilha`, na `Movimentacao` e no `Usuario`: soma e subtração do saldo, nível mínimo, valor em estoque | `domain/` |
+| Serviço | Regras de negócio com os repositórios simulados (Mockito): código duplicado, saldo insuficiente, pastilha inativa, período invertido, último administrador, cálculo dos indicadores e do CSV | `service/` |
 | Repositório | As consultas escritas à mão, rodando contra um banco de verdade (`@DataJpaTest`) | `repository/` |
-| API | Os códigos HTTP e o JSON de cada endpoint (`@WebMvcTest`) | `controller/` |
+| API | Os códigos HTTP e o JSON de cada endpoint (`@WebMvcTest`), e quem pode chamar cada um (401 sem login, 403 para o perfil errado) | `controller/` |
 
 Além desses, dois testes sobem a aplicação inteira:
 
-- `FluxoDeEstoqueTest` — faz o caminho completo por HTTP (cadastra, dá entrada,
-  dá saída, confere o saldo, o histórico e o painel). É o teste que prova que o
-  saldo fecha.
+- `FluxoDeEstoqueTest` — faz o caminho completo por HTTP, logado como administrador
+  (cadastra, dá entrada, dá saída, confere o saldo, o histórico, o painel, os
+  indicadores e o CSV). É o teste que confere se o saldo fecha.
 - `MigracaoFlywayTest` — sobe do jeito que sobe em produção, com o Flyway criando
   as tabelas e o Hibernate conferindo (`ddl-auto: validate`). Se alguém mexer numa
   entidade e esquecer a migration, quebra aqui e não na hora de publicar.
 
-## Publicar na internet
+## Publicar na AWS EC2
 
-O projeto tem o `Dockerfile` pronto, em duas etapas: a primeira compila com o
-Maven e a segunda copia só o `.jar` para uma imagem menor.
+O projeto tem o `Dockerfile` (compila com o Maven e copia só o `.jar` para uma
+imagem menor) e o `docker-compose.yml`, que sobe a aplicação junto com o PostgreSQL.
+No servidor não precisa instalar Java nem banco, só o Docker.
 
-```bash
-cd backend
-docker build -t controle-estoque .
-docker run -p 8080:8080 -e DB_HOST=... -e DB_NAME=... -e DB_USER=... -e DB_PASSWORD=... controle-estoque
-```
+1. Na AWS, crie uma instância EC2 com **Amazon Linux 2023**. A `t3.small` (2 GB) é a
+   mais segura; a `t2.micro`/`t3.micro` do nível gratuito funciona, mas o build fica
+   lento e pode faltar memória.
+2. No grupo de segurança, libere a porta **22** (SSH, só para o seu IP) e a porta
+   **80** (HTTP, para todos).
+3. Entre no servidor por SSH e instale o Docker e o Git:
+
+   ```bash
+   sudo dnf install -y docker git
+   sudo systemctl enable --now docker
+   sudo usermod -aG docker ec2-user      # depois disso, saia e entre de novo no SSH
+   sudo mkdir -p /usr/local/lib/docker/cli-plugins
+   sudo curl -SL https://github.com/docker/compose/releases/download/v2.29.7/docker-compose-linux-x86_64 \
+        -o /usr/local/lib/docker/cli-plugins/docker-compose
+   sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+   ```
+
+4. Baixe o projeto, defina a senha do banco e suba:
+
+   ```bash
+   git clone https://github.com/BrennoHisgail/app_pastilhas.git
+   cd app_pastilhas/backend
+   echo "DB_PASSWORD=troque-esta-senha" > .env
+   docker compose up -d --build
+   ```
+
+5. Depois de uns minutos o sistema abre em `http://IP-PUBLICO-DA-INSTANCIA/`.
+
+Para atualizar depois de um `git push`: `git pull && docker compose up -d --build`.
+Os dados do banco ficam num volume do Docker e não se perdem na atualização.
+
+**Antes de apresentar:** entre como `admin@dda.com.br` e troque a senha dos dois
+usuários de demonstração na tela **Usuários**, porque elas estão escritas neste README.
 
 ## Organização das pastas
 
@@ -101,7 +132,8 @@ docker run -p 8080:8080 -e DB_HOST=... -e DB_NAME=... -e DB_USER=... -e DB_PASSW
 backend/src/main/java/br/com/ddametalurgica/estoque/
 ├── config/          configurações do Spring Security e do Swagger
 ├── controller/api/  os @RestController, que são a API REST
-├── controller/web/  devolve as páginas HTML
+├── controller/web/  devolve as páginas HTML e coloca o usuário logado no menu
+├── security/        liga o Usuario do banco ao login do Spring Security
 ├── service/         as regras de negócio
 ├── repository/      interfaces do Spring Data JPA
 ├── domain/          entidades do banco e enums
@@ -159,6 +191,26 @@ página de erro.
 **Não usamos Lombok.** Os DTOs são `record`, que já não precisam de get e set. Só as duas
 entidades têm getters e setters escritos na mão.
 
+**Login por sessão, não por token.** As telas são Thymeleaf servidas pelo próprio
+backend, então o login clássico do Spring Security (formulário + cookie de sessão) é o
+caminho mais simples. Como cookie de sessão é vulnerável a CSRF, a proteção de CSRF
+fica ligada: o layout coloca o token numa `<meta>` e o `api.js` manda ele em toda
+chamada que altera dados.
+
+**A permissão é conferida no backend, não só na tela.** O operador não vê os botões de
+cadastro, mas mesmo que chame a API direto recebe 403. As regras ficam todas juntas
+no `SecurityConfig`.
+
+**Cada movimentação guarda quem lançou.** A `Movimentacao` aponta para o `Usuario`
+logado, e o histórico e o CSV mostram o responsável.
+
+**Os indicadores são calculados na hora.** Ponto de Pedido, Giro, Cobertura e Curva ABC
+saem das movimentações do período escolhido (30 a 365 dias), sem tabela nova. O banco
+só soma as entradas e saídas por pastilha; as contas ficam no `IndicadorService`.
+
+**O CSV abre direto no Excel.** Separador `;`, decimal com vírgula e o BOM do UTF-8 no
+começo do arquivo, que é o que o Excel em português espera.
+
 **As telas não acessam o banco.** O `PaginaController` só devolve o HTML, e os dados são
 buscados pelo JavaScript chamando a API. Assim existe um caminho de dados só, que é a API,
 e ela é a mesma coisa que o Swagger documenta.
@@ -179,7 +231,17 @@ e ela é a mesma coisa que o Swagger documenta.
 | POST | `/api/movimentacoes/saida` | RF06, RF07 |
 | GET | `/api/movimentacoes` | RF10 — histórico |
 | GET | `/api/dashboard/indicadores` | RF11 |
+| GET | `/api/indicadores/estoque?dias=90` | RF11 — PP, Giro, Cobertura e Curva ABC |
 | GET | `/api/alertas/reposicao` | RF09 |
+| GET | `/api/relatorios/estoque.csv` | RF14 |
+| GET | `/api/relatorios/movimentacoes.csv` | RF14 |
+| GET · POST | `/api/usuarios` | RF13 |
+| GET · PUT · DELETE | `/api/usuarios/{id}` | RF13 — inativação no DELETE |
+| PATCH | `/api/usuarios/{id}/senha` · `/api/usuarios/{id}/reativar` | RF13 |
+| POST | `/login` · `/logout` | RF12 |
+
+Consultar, movimentar, ver indicadores e exportar: qualquer usuário logado.
+Cadastrar, editar e inativar pastilhas, e tudo de `/api/usuarios`: só ADMIN.
 
 ## Telas
 
@@ -189,6 +251,10 @@ e ela é a mesma coisa que o Swagger documenta.
 | `/pastilhas` | Lista de pastilhas | `pastilhas/lista.html` |
 | `/pastilhas/nova` · `/pastilhas/{id}/editar` | Cadastro e edição | `pastilhas/form.html` |
 | `/movimentacoes` | Entradas, saídas e histórico | `movimentacoes.html` |
+| `/indicadores` | Ponto de Pedido, Giro, Cobertura e Curva ABC | `indicadores.html` |
+| `/usuarios` | Lista de usuários (só ADMIN) | `usuarios/lista.html` |
+| `/usuarios/novo` · `/usuarios/{id}/editar` | Cadastro, edição e troca de senha (só ADMIN) | `usuarios/form.html` |
+| `/login` | Entrada no sistema | `login.html` |
 
 ## Situação das sprints
 
@@ -196,25 +262,26 @@ e ela é a mesma coisa que o Swagger documenta.
 |---|---|---|
 | 18/09 | Setup, banco, CRUD de pastilhas e Swagger | **feito** |
 | 23/09 | Entradas, saídas e saldo automático (RF05-RF07, RF10) | **feito** |
-| 02/10 | Alertas e indicadores (RF09, RF11) | **parcial** — falta Ponto de Pedido, Giro, Cobertura e ABC |
-| 09/10 | Login, perfis de usuário e senha criptografada (RF12, RF13) | a fazer |
+| 02/10 | Alertas e indicadores (RF09, RF11) | **feito** |
+| 09/10 | Login, perfis de usuário e senha criptografada (RF12, RF13) | **feito** |
 | 16/10 | Telas em Thymeleaf | **feito** |
-| 30/10 | Testes e relatório em CSV (RF14) | **parcial** — testes feitos (122), falta o CSV |
-| 13/11 | Publicar na AWS EC2 | a fazer |
+| 30/10 | Testes e relatório em CSV (RF14) | **feito** — 176 testes |
+| 13/11 | Publicar na AWS EC2 | `Dockerfile` e `docker-compose.yml` prontos, falta subir a instância |
 
 Adiantamos as telas, e junto com elas as movimentações, porque o painel e a tela de
 movimentação não teriam o que mostrar sem esses endpoints prontos.
 
-## Indicadores que ainda vamos calcular
+## Indicadores de estoque
 
-Usando o material da disciplina, a partir das movimentações:
+Calculados pelo `IndicadorService` a partir das movimentações do período escolhido
+na tela (30, 90, 180 ou 365 dias), usando o material da disciplina:
 
 | Indicador | Fórmula |
 |---|---|
-| Ponto de Pedido | `PP = (d × t) + Qs` |
-| Giro de estoque | `consumo do período / estoque médio` |
-| Cobertura | dias que o estoque aguenta |
-| Curva ABC | Pareto por valor movimentado |
+| Consumo médio diário (d) | `saídas do período / dias do período` |
+| Ponto de Pedido | `PP = (d × t) + Qs`, com t = `lead_time_dias` e Qs = `estoque_seguranca` |
+| Cobertura | `saldo atual / d`: quantos dias o estoque aguenta |
+| Giro de estoque | `saídas do período / estoque médio`, com estoque médio = (saldo no início + saldo atual) / 2 |
+| Curva ABC | pastilhas ordenadas pelo valor consumido (saídas × custo): A até 80% do total, B até 95%, C o resto |
 
-Os campos `lead_time_dias` (o t) e `estoque_seguranca` (o Qs) já estão no cadastro
-esperando esses cálculos.
+Pastilha sem consumo no período fica sem cobertura (o estoque não acaba) e na classe C.

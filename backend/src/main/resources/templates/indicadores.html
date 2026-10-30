@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Indicadores')}"></head>
+<body>
+
+<header th:replace="~{fragments/layout :: topbar('indicadores')}"></header>
+
+<main class="pagina" id="conteudo">
+
+    <div class="pagina__cabecalho">
+        <h1 class="pagina__titulo">Indicadores de estoque</h1>
+        <span class="pagina__legenda">Ponto de Pedido, Giro, Cobertura e Curva ABC</span>
+        <span class="espacador"></span>
+        <div class="campo">
+            <label class="campo__rotulo" for="dias">Período analisado</label>
+            <select id="dias" name="dias">
+                <option value="30">Últimos 30 dias</option>
+                <option value="90" selected>Últimos 90 dias</option>
+                <option value="180">Últimos 180 dias</option>
+                <option value="365">Últimos 365 dias</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="indicadores">
+        <div class="indicador">
+            <div class="indicador__rotulo">Classe A</div>
+            <div class="indicador__valor" id="kpiA">–</div>
+            <div class="indicador__nota">até 80% do valor consumido</div>
+        </div>
+
+        <div class="indicador">
+            <div class="indicador__rotulo">Classe B</div>
+            <div class="indicador__valor indicador__valor--neutro" id="kpiB">–</div>
+            <div class="indicador__nota">de 80% a 95%</div>
+        </div>
+
+        <div class="indicador">
+            <div class="indicador__rotulo">Classe C</div>
+            <div class="indicador__valor indicador__valor--neutro" id="kpiC">–</div>
+            <div class="indicador__nota">o restante, inclusive sem consumo</div>
+        </div>
+
+        <div class="indicador indicador--alerta">
+            <div class="indicador__rotulo">Abaixo do Ponto de Pedido</div>
+            <div class="indicador__valor indicador__valor--alerta" id="kpiPp">–</div>
+            <div class="indicador__nota">hora de fazer o pedido</div>
+        </div>
+    </div>
+
+    <div class="colunas">
+
+        <section class="cartao coluna--principal">
+            <div class="cartao__cabecalho">
+                <h2 class="cartao__titulo">Pastilhas pela Curva ABC</h2>
+                <span class="espacador"></span>
+                <span class="rota" id="rota">GET /api/indicadores/estoque?dias=90</span>
+            </div>
+
+            <div class="tabela-rolavel">
+                <table class="tabela">
+                    <caption class="oculto">Indicadores de cada pastilha</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">ABC</th>
+                        <th scope="col">Código</th>
+                        <th scope="col" class="num">Consumo</th>
+                        <th scope="col" class="num">Consumo/dia</th>
+                        <th scope="col" class="num">Ponto de Pedido</th>
+                        <th scope="col" class="num">Saldo</th>
+                        <th scope="col" class="num">Cobertura</th>
+                        <th scope="col" class="num">Giro</th>
+                        <th scope="col" class="num">% acumulado</th>
+                    </tr>
+                    </thead>
+                    <tbody id="corpoTabela"></tbody>
+                </table>
+            </div>
+
+            <div class="vazio oculto" id="vazio">
+                <div class="vazio__titulo">Nenhuma pastilha ativa</div>
+                <div class="vazio__texto">Cadastre pastilhas e registre movimentações para ver os indicadores.</div>
+            </div>
+        </section>
+
+        <aside class="coluna--lateral" style="display: flex; flex-direction: column; gap: 16px;">
+            <section class="cartao">
+                <div class="cartao__corpo">
+                    <div class="campo__rotulo">Como cada número é calculado</div>
+                    <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px; font-size: 12.5px; color: var(--muted); line-height: 1.55;">
+                        <span><strong style="color: var(--ink);">Consumo/dia (d)</strong><br>
+                            saídas do período ÷ dias do período</span>
+                        <span><strong style="color: var(--ink);">Ponto de Pedido</strong>
+                            <span class="formula" style="display: block; margin-top: 6px;">PP = (d × t) + Qs</span>
+                            t = lead time do fornecedor, Qs = estoque de segurança</span>
+                        <span><strong style="color: var(--ink);">Cobertura</strong><br>
+                            saldo atual ÷ d: quantos dias o estoque aguenta</span>
+                        <span><strong style="color: var(--ink);">Giro</strong><br>
+                            saídas do período ÷ estoque médio do período</span>
+                        <span><strong style="color: var(--ink);">Curva ABC</strong><br>
+                            pastilhas ordenadas pelo valor consumido (saídas × custo)</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <div class="aviso aviso--erro oculto" id="erro" role="alert"></div>
+</main>
+
+<footer th:replace="~{fragments/layout :: rodape}"></footer>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/indicadores.js}"></script>
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Cadastro de pastilha')}"></head>
+<body>
+
+<header th:replace="~{fragments/layout :: topbar('pastilhas')}"></header>
+
+<main class="pagina" id="conteudo">
+
+    <div class="pagina__cabecalho">
+        <a class="botao botao--icone" th:href="@{/pastilhas}" aria-label="Voltar ao catálogo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16181A" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 12H5"></path>
+                <path d="m12 19-7-7 7-7"></path>
+            </svg>
+        </a>
+        <h1 class="pagina__titulo" id="titulo">Nova pastilha</h1>
+        <span class="pagina__legenda">Cadastro do catálogo</span>
+    </div>
+
+    <div class="colunas">
+
+        <form class="cartao coluna--principal" id="formPastilha" novalidate>
+            <div class="cartao__corpo" style="display: flex; flex-direction: column; gap: 22px;">
+
+                <div class="grupo-secao">
+                    <div class="grupo-secao__titulo">Identificação</div>
+                    <div class="linha-campos">
+                        <div class="campo" style="width: 220px;">
+                            <label class="campo__rotulo--forte" for="codigo">Código</label>
+                            <input type="text" id="codigo" name="codigo" class="mono" maxlength="40" required
+                                   placeholder="CNMG120408">
+                            <span class="campo__ajuda">Único no catálogo</span>
+                            <span class="campo__erro oculto" data-erro="codigo"></span>
+                        </div>
+                        <div class="campo campo--largo">
+                            <label class="campo__rotulo--forte" for="descricao">Descrição</label>
+                            <input type="text" id="descricao" name="descricao" maxlength="200" required
+                                   placeholder="Pastilha de torneamento CNMG 120408 metal duro">
+                            <span class="campo__ajuda">Até 200 caracteres</span>
+                            <span class="campo__erro oculto" data-erro="descricao"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grupo-secao">
+                    <div class="grupo-secao__titulo">Classificação</div>
+                    <div class="linha-campos">
+                        <div class="campo" style="width: 260px;">
+                            <label class="campo__rotulo--forte" for="categoria">Categoria</label>
+                            <input type="text" id="categoria" name="categoria" list="categorias" maxlength="80"
+                                   required placeholder="Torneamento">
+                            <datalist id="categorias"></datalist>
+                            <span class="campo__ajuda">Sugere as já usadas</span>
+                            <span class="campo__erro oculto" data-erro="categoria"></span>
+                        </div>
+                        <div class="campo" style="width: 190px;">
+                            <label class="campo__rotulo--forte" for="unidadeMedida">Unidade de medida</label>
+                            <select id="unidadeMedida" name="unidadeMedida" required>
+                                <option value="UN">UN – unidade</option>
+                                <option value="PC">PC – peça</option>
+                                <option value="CX">CX – caixa</option>
+                                <option value="KG">KG – quilograma</option>
+                                <option value="M">M – metro</option>
+                            </select>
+                        </div>
+                        <div class="campo" style="width: 180px;">
+                            <label class="campo__rotulo--forte" for="custoUnitario">Custo unitário</label>
+                            <input type="number" id="custoUnitario" name="custoUnitario" min="0" step="0.01" required
+                                   placeholder="38.90">
+                            <span class="campo__ajuda">Em reais</span>
+                            <span class="campo__erro oculto" data-erro="custoUnitario"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grupo-secao">
+                    <div class="grupo-secao__titulo">Parâmetros de reposição</div>
+                    <div class="linha-campos">
+                        <div class="campo" style="width: 180px;">
+                            <label class="campo__rotulo--forte" for="nivelMinimo">Nível mínimo</label>
+                            <input type="number" id="nivelMinimo" name="nivelMinimo" min="0" step="0.001" required
+                                   placeholder="50">
+                            <span class="campo__ajuda">Dispara o alerta</span>
+                            <span class="campo__erro oculto" data-erro="nivelMinimo"></span>
+                        </div>
+                        <div class="campo" style="width: 180px;">
+                            <label class="campo__rotulo--forte" for="leadTimeDias">Lead time (dias)</label>
+                            <input type="number" id="leadTimeDias" name="leadTimeDias" min="0" step="1" required
+                                   placeholder="10">
+                            <span class="campo__ajuda">O t do Ponto de Pedido</span>
+                            <span class="campo__erro oculto" data-erro="leadTimeDias"></span>
+                        </div>
+                        <div class="campo" style="width: 200px;">
+                            <label class="campo__rotulo--forte" for="estoqueSeguranca">Estoque de segurança</label>
+                            <input type="number" id="estoqueSeguranca" name="estoqueSeguranca" min="0" step="0.001"
+                                   required placeholder="20">
+                            <span class="campo__ajuda">O Qs do Ponto de Pedido</span>
+                            <span class="campo__erro oculto" data-erro="estoqueSeguranca"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="aviso aviso--erro oculto" id="erro" role="alert"></div>
+                <div class="aviso aviso--ok oculto" id="sucesso" role="status"></div>
+
+                <div class="acoes-formulario">
+                    <button type="submit" class="botao botao--primario" id="salvar">Salvar pastilha</button>
+                    <a class="botao botao--secundario" th:href="@{/pastilhas}">Cancelar</a>
+                    <span class="espacador"></span>
+                    <span class="rota" id="rota">POST /api/pastilhas</span>
+                </div>
+            </div>
+        </form>
+
+        <aside class="coluna--lateral" style="display: flex; flex-direction: column; gap: 16px;">
+
+            <section class="cartao" style="border-left: 3px solid var(--steel);">
+                <div class="cartao__corpo">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F4C5C" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M12 11v5"></path>
+                            <path d="M12 8h.01"></path>
+                        </svg>
+                        <strong style="font-size: 13px;">Por que não há campo de saldo</strong>
+                    </div>
+                    <p style="margin: 10px 0 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.6;">
+                        O saldo nunca é digitado. Ele só muda por entrada ou saída de estoque, inclusive a carga
+                        inicial de um item novo. Depois de salvar, registre uma entrada para dar saldo à pastilha.
+                    </p>
+                    <a style="margin-top: 10px; display: inline-block; font-size: 13px; font-weight: 600;"
+                       th:href="@{/movimentacoes}">Ir para movimentações</a>
+                </div>
+            </section>
+
+            <section class="cartao">
+                <div class="cartao__corpo">
+                    <div class="campo__rotulo">Ponto de Pedido</div>
+                    <p style="margin: 10px 0 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.6;">
+                        Lead time e estoque de segurança alimentam a fórmula que vai substituir o nível mínimo fixo:
+                    </p>
+                    <div class="formula" style="margin-top: 12px;">PP = (d × t) + Qs</div>
+                    <p style="margin: 10px 0 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.55;">
+                        d = consumo médio diário, calculado a partir das saídas registradas.
+                    </p>
+                </div>
+            </section>
+
+            <section class="cartao">
+                <div class="cartao__corpo">
+                    <div class="campo__rotulo">Respostas do servidor</div>
+                    <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 9px; font-size: 12.5px; color: var(--muted); line-height: 1.5;">
+                        <span><strong style="color: var(--ok);">201</strong> &nbsp;Cadastro criado, com Location no cabeçalho</span>
+                        <span><strong style="color: var(--alert);">400</strong> &nbsp;Campo obrigatório vazio ou valor negativo</span>
+                        <span><strong style="color: var(--alert);">409</strong> &nbsp;Código já existe no catálogo</span>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+</main>
+
+<!-- Vem vazio no cadastro novo e com o id quando é edição -->
+<footer th:replace="~{fragments/layout :: rodape}"></footer>
+<div th:replace="~{fragments/layout :: dialogo}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<script th:inline="javascript">
+    window.PASTILHA_ID = /*[[${pastilhaId}]]*/ '';
+</script>
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/pastilha-form.js}"></script>
+</body>
+</html>

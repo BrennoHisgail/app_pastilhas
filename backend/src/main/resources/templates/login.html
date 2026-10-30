@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Entrar')}"></head>
+<body>
+
+<!-- Unica tela sem o menu de cima: quem chega aqui ainda nao esta logado -->
+<main class="login" id="conteudo">
+    <div class="login__caixa">
+
+        <div class="login__marca">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0F4C5C" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"></path>
+                <path d="M3 7.5 12 12l9-4.5"></path>
+                <path d="M12 12v9"></path>
+            </svg>
+            <div>
+                <div class="login__nome">DDA Metalúrgica</div>
+                <div class="login__sub">Controle de Estoque de Pastilhas</div>
+            </div>
+        </div>
+
+        <!-- O Thymeleaf coloca sozinho o campo escondido do CSRF neste form -->
+        <form class="cartao" th:action="@{/login}" method="post">
+            <div class="cartao__corpo login__form">
+
+                <div class="aviso aviso--erro" role="alert" th:if="${param.erro}">E-mail ou senha inválidos.</div>
+                <div class="aviso aviso--info" role="status" th:if="${param.expirado}">Sua sessão expirou. Entre novamente.</div>
+                <div class="aviso aviso--ok" role="status" th:if="${param.saiu}">Você saiu do sistema.</div>
+
+                <div class="campo">
+                    <label class="campo__rotulo--forte" for="username">E-mail</label>
+                    <input type="email" id="username" name="username" autocomplete="username" required autofocus>
+                </div>
+
+                <div class="campo">
+                    <label class="campo__rotulo--forte" for="password">Senha</label>
+                    <input type="password" id="password" name="password" autocomplete="current-password" required>
+                </div>
+
+                <button type="submit" class="botao botao--primario">Entrar</button>
+            </div>
+        </form>
+
+        <p class="login__demo">
+            Usuários de demonstração:<br>
+            <span class="mono">admin@dda.com.br</span> / <span class="mono">admin123</span><br>
+            <span class="mono">operador@dda.com.br</span> / <span class="mono">operador123</span>
+        </p>
+    </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Movimentações')}"></head>
+<body>
+
+<header th:replace="~{fragments/layout :: topbar('movimentacoes')}"></header>
+
+<main class="pagina" id="conteudo">
+
+    <div class="pagina__cabecalho">
+        <h1 class="pagina__titulo">Registrar movimentação</h1>
+        <span class="pagina__legenda">O saldo da pastilha é recalculado a cada lançamento</span>
+    </div>
+
+    <div class="colunas">
+
+        <form class="cartao" id="formMovimentacao" novalidate style="width: 660px; flex-shrink: 0;">
+            <div class="cartao__corpo" style="display: flex; flex-direction: column; gap: 18px;">
+
+                <div class="campo">
+                    <label class="campo__rotulo" for="pastilhaId">Pastilha</label>
+                    <select id="pastilhaId" name="pastilhaId" required>
+                        <option value="">Carregando catálogo…</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <span class="campo__rotulo">Tipo de lançamento</span>
+                    <div class="opcoes-tipo">
+                        <label class="opcao-tipo opcao-tipo--entrada" for="tipoEntrada">
+                            <input type="radio" id="tipoEntrada" name="tipo" value="entrada" checked>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2E6B4F"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 19V5"></path>
+                                <path d="m5 12 7-7 7 7"></path>
+                            </svg>
+                            <span class="opcao-tipo__texto">
+                                <span class="opcao-tipo__nome">Entrada</span>
+                                <span class="opcao-tipo__nota">recebimento ou compra</span>
+                            </span>
+                        </label>
+
+                        <label class="opcao-tipo opcao-tipo--saida" for="tipoSaida">
+                            <input type="radio" id="tipoSaida" name="tipo" value="saida">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#A63D17"
+                                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M12 5v14"></path>
+                                <path d="m19 12-7 7-7-7"></path>
+                            </svg>
+                            <span class="opcao-tipo__texto">
+                                <span class="opcao-tipo__nome">Saída</span>
+                                <span class="opcao-tipo__nota">consumo na produção</span>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="linha-campos">
+                    <div class="campo" style="width: 150px;">
+                        <label class="campo__rotulo" for="quantidade">Quantidade</label>
+                        <input type="number" id="quantidade" name="quantidade" min="0.001" step="0.001" required
+                               placeholder="0">
+                    </div>
+                    <div class="campo" style="width: 180px;">
+                        <label class="campo__rotulo" for="documento">Documento</label>
+                        <input type="text" id="documento" name="documento" maxlength="60" placeholder="NF 12345">
+                    </div>
+                    <div class="campo campo--largo">
+                        <label class="campo__rotulo" for="origemDestino">Origem / destino</label>
+                        <input type="text" id="origemDestino" name="origemDestino" maxlength="160"
+                               placeholder="Fornecedor Sandvik / OP 8890">
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label class="campo__rotulo" for="observacao">Observação</label>
+                    <textarea id="observacao" name="observacao" rows="2" maxlength="400" placeholder="Opcional"></textarea>
+                </div>
+
+                <div class="aviso aviso--erro oculto" id="erro" role="alert"></div>
+                <div class="aviso aviso--ok oculto" id="sucesso" role="status"></div>
+
+                <div class="acoes-formulario">
+                    <button type="submit" class="botao botao--primario" id="registrar">Registrar lançamento</button>
+                    <button type="button" class="botao botao--secundario" id="limpar">Limpar</button>
+                    <span class="espacador"></span>
+                    <span class="rota" id="rota">POST /api/movimentacoes/entrada</span>
+                </div>
+            </div>
+        </form>
+
+        <div class="coluna--principal" style="display: flex; flex-direction: column; gap: 16px;">
+
+            <section class="cartao" id="cartaoSaldo">
+                <div class="cartao__corpo">
+                    <div class="campo__rotulo">Saldo atual</div>
+                    <div class="codigo" style="margin-top: 8px;" id="saldoCodigo">–</div>
+                    <div style="margin-top: 2px; font-size: 12.5px; color: var(--muted); line-height: 1.4;"
+                         id="saldoDescricao">Selecione uma pastilha</div>
+                    <div style="margin-top: 14px; display: flex; align-items: baseline; gap: 10px;">
+                        <span style="font-family: var(--display); font-size: 52px; font-weight: 700; line-height: 1;"
+                              id="saldoValor">–</span>
+                        <span style="font-size: 13px; color: var(--muted);" id="saldoUnidade">em estoque</span>
+                    </div>
+                    <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 12.5px; color: var(--muted);" id="saldoMinimo">Nível mínimo: –</span>
+                        <span class="selo selo--neutro" id="saldoSituacao">–</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="cartao">
+                <div class="cartao__cabecalho">
+                    <h2 class="cartao__titulo">Últimos lançamentos</h2>
+                    <span class="selo selo--neutro" id="totalMovs">–</span>
+                    <span class="espacador"></span>
+                    <span class="rota">GET /api/movimentacoes</span>
+                </div>
+
+                <div class="tabela-rolavel">
+                    <table class="tabela">
+                        <caption class="oculto">Histórico de entradas e saídas</caption>
+                        <thead>
+                        <tr>
+                            <th scope="col">Data</th>
+                            <th scope="col">Código</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col" class="num">Qtd.</th>
+                            <th scope="col" class="num">Saldo após</th>
+                            <th scope="col">Documento</th>
+                        </tr>
+                        </thead>
+                        <tbody id="corpoHistorico"></tbody>
+                    </table>
+                </div>
+
+                <div class="vazio oculto" id="historicoVazio">
+                    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B4B0A8" stroke-width="1.5"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 12h4l3 8 4-16 3 8h4"></path>
+                    </svg>
+                    <div class="vazio__titulo">Nenhum lançamento ainda</div>
+                    <div class="vazio__texto">Registre uma entrada ou saída ao lado para ver o saldo sendo recalculado.</div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: rodape}"></footer>
+<div th:replace="~{fragments/layout :: dialogo}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/movimentacoes.js}"></script>
+</body>
+</html>

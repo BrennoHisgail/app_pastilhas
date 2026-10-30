@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Erro no servidor')}"></head>
+<body>
+
+<header th:replace="~{fragments/layout :: topbar('')}"></header>
+
+<main class="pagina" id="conteudo">
+    <section class="cartao">
+        <div class="vazio" style="padding: 72px 24px;">
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#A63D17" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path>
+                <path d="M12 9v4"></path>
+                <path d="M12 17h.01"></path>
+            </svg>
+            <div class="vazio__titulo" style="font-size: 19px;">Não foi possível concluir a operação</div>
+            <div class="vazio__texto">
+                O servidor encontrou um erro inesperado. Nenhuma movimentação foi gravada pela metade —
+                cada lançamento roda em uma transação única. Tente novamente em instantes.
+            </div>
+            <a class="botao botao--primario" style="margin-top: 8px;" th:href="@{/}">Voltar ao painel</a>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: rodape}"></footer>
+<script th:src="@{/js/api.js}"></script>
+</body>
+</html>

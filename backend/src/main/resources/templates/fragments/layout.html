@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+
+<!--
+  Pedaços de HTML que se repetem em todas as telas: o cabeçalho,
+  o menu e o rodapé. As outras páginas chamam com th:replace
+  para não precisar copiar e colar em cada arquivo.
+-->
+
+<head th:fragment="head(titulo)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Controle de estoque de pastilhas industriais da DDA Metalúrgica">
+    <meta name="color-scheme" content="light">
+    <title th:text="|${titulo} · Controle de Estoque · DDA Metalúrgica|">Controle de Estoque</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <!-- O api.js le estes dois para mandar o token CSRF nas chamadas que alteram dados -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+</head>
+
+<body>
+
+<header class="topbar" th:fragment="topbar(ativo)">
+    <a class="atalho-conteudo" href="#conteudo">Ir para o conteúdo</a>
+
+    <a class="topbar__marca" th:href="@{/}">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#5BB0C4" stroke-width="1.8"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"></path>
+            <path d="M3 7.5 12 12l9-4.5"></path>
+            <path d="M12 12v9"></path>
+        </svg>
+        <span class="topbar__nome">DDA Metalúrgica</span>
+        <span class="topbar__divisor" aria-hidden="true"></span>
+        <span class="topbar__sub">Controle de Estoque</span>
+    </a>
+
+    <nav class="topbar__nav" aria-label="Navegação principal">
+        <a class="topbar__link" th:classappend="${ativo == 'painel'} ? 'topbar__link--ativo'"
+           th:href="@{/}" th:attrappend="aria-current=${ativo == 'painel'} ? 'page'">Painel</a>
+        <a class="topbar__link" th:classappend="${ativo == 'pastilhas'} ? 'topbar__link--ativo'"
+           th:href="@{/pastilhas}" th:attrappend="aria-current=${ativo == 'pastilhas'} ? 'page'">Pastilhas</a>
+        <a class="topbar__link" th:classappend="${ativo == 'movimentacoes'} ? 'topbar__link--ativo'"
+           th:href="@{/movimentacoes}"
+           th:attrappend="aria-current=${ativo == 'movimentacoes'} ? 'page'">Movimentações</a>
+    </nav>
+
+    <!-- usuarioLogado vem do SessaoWebAdvice -->
+    <div class="topbar__usuario" th:if="${usuarioLogado != null}">
+        <span class="topbar__avatar" aria-hidden="true" th:text="${usuarioLogado.iniciais}">US</span>
+        <span class="topbar__usuario-texto">
+            <span class="topbar__usuario-nome" th:text="${usuarioLogado.nome}">Usuário</span>
+            <span class="topbar__usuario-papel" th:text="${usuarioLogado.admin} ? 'Administrador' : 'Operador'">Operador</span>
+        </span>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="topbar__sair">Sair</button>
+        </form>
+    </div>
+</header>
+
+<footer class="rodape" th:fragment="rodape">
+    <span>Controle de Estoque de Pastilhas Industriais · DDA Metalúrgica</span>
+    <span class="rodape__separador" aria-hidden="true">·</span>
+    <span>Projeto Aplicado III — ADS · UniSENAI</span>
+    <span class="espacador"></span>
+    <label class="rodape__opcao" for="alternarRotas">
+        <input type="checkbox" id="alternarRotas">
+        Exibir rotas da API
+    </label>
+</footer>
+
+<!-- Caixa que pergunta antes de inativar, mais bonita que o confirm() -->
+<dialog class="dialogo" id="dialogoConfirma" th:fragment="dialogo">
+    <form method="dialog" class="dialogo__caixa">
+        <h2 class="dialogo__titulo" id="dialogoTitulo">Confirmar</h2>
+        <p class="dialogo__texto" id="dialogoTexto"></p>
+        <div class="dialogo__acoes">
+            <button type="submit" value="cancelar" class="botao botao--secundario">Cancelar</button>
+            <button type="submit" value="confirmar" class="botao botao--perigo" id="dialogoConfirmar">Confirmar</button>
+        </div>
+    </form>
+</dialog>
+
+<div class="avisos-flutuantes" id="avisosFlutuantes" aria-live="polite" th:fragment="toasts"></div>
+
+</body>
+</html>

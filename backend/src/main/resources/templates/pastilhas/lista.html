@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Pastilhas')}"></head>
+<body>
+
+<header th:replace="~{fragments/layout :: topbar('pastilhas')}"></header>
+
+<main class="pagina" id="conteudo">
+
+    <div class="pagina__cabecalho">
+        <h1 class="pagina__titulo">Catálogo de pastilhas</h1>
+        <span class="pagina__legenda" id="resumo">carregando</span>
+        <span class="espacador"></span>
+        <a class="botao botao--primario" th:href="@{/pastilhas/nova}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+            </svg>
+            Nova pastilha
+        </a>
+    </div>
+
+    <form class="filtros" id="formFiltros" onsubmit="return false">
+        <div class="campo campo--largo">
+            <label class="campo__rotulo" for="busca">Buscar por código ou descrição</label>
+            <input type="search" id="busca" name="busca" placeholder="ex.: CNMG, fresamento, broca">
+        </div>
+
+        <div class="campo">
+            <label class="campo__rotulo" for="categoria">Categoria</label>
+            <select id="categoria" name="categoria">
+                <option value="">Todas as categorias</option>
+            </select>
+        </div>
+
+        <label class="caixa-selecao" for="abaixoDoMinimo">
+            <input type="checkbox" id="abaixoDoMinimo" name="abaixoDoMinimo">
+            Somente itens abaixo do mínimo
+        </label>
+
+        <label class="caixa-selecao" for="inativas">
+            <input type="checkbox" id="inativas" name="inativas">
+            Mostrar inativadas
+        </label>
+
+        <span class="espacador"></span>
+        <span class="rota" id="rota">GET /api/pastilhas</span>
+    </form>
+
+    <section class="cartao">
+        <div class="tabela-rolavel">
+            <table class="tabela">
+                <caption class="oculto">Pastilhas cadastradas</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Código</th>
+                    <th scope="col">Descrição</th>
+                    <th scope="col">Categoria</th>
+                    <th scope="col">UM</th>
+                    <th scope="col" class="num">Saldo</th>
+                    <th scope="col" class="num">Mínimo</th>
+                    <th scope="col" class="num">Valor</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col" class="acoes">Ações</th>
+                </tr>
+                </thead>
+                <tbody id="corpoTabela"></tbody>
+            </table>
+        </div>
+
+        <div class="vazio oculto" id="vazio">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#B4B0A8" stroke-width="1.5"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m21 21-4.3-4.3"></path>
+            </svg>
+            <div class="vazio__titulo">Nenhuma pastilha encontrada</div>
+            <div class="vazio__texto">Ajuste a busca ou limpe os filtros.</div>
+        </div>
+
+        <div class="paginacao">
+            <button type="button" class="botao botao--secundario" id="anterior" disabled>Anterior</button>
+            <button type="button" class="botao botao--secundario" id="proxima" disabled>Próxima</button>
+            <span id="infoPagina">–</span>
+        </div>
+    </section>
+
+    <div class="aviso aviso--erro oculto" id="erro" role="alert"></div>
+</main>
+
+<footer th:replace="~{fragments/layout :: rodape}"></footer>
+<div th:replace="~{fragments/layout :: dialogo}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/pastilhas.js}"></script>
+</body>
+</html>

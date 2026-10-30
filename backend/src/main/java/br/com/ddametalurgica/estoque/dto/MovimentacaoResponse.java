@@ -18,7 +18,8 @@ public record MovimentacaoResponse(
         LocalDateTime dataHora,
         String documento,
         String origemDestino,
-        String observacao
+        String observacao,
+        String usuarioNome
 ) {
 
     // Converte a entidade do banco neste record
@@ -34,6 +35,7 @@ public record MovimentacaoResponse(
                 m.getDataHora(),
                 m.getDocumento(),
                 m.getOrigemDestino(),
-                m.getObservacao());
+                m.getObservacao(),
+                m.getUsuario() == null ? null : m.getUsuario().getNome());
     }
 }

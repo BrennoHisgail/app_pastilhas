@@ -1,0 +1,42 @@
+# Sobe o sistema inteiro (aplicacao + PostgreSQL) com um comando so:
+#
+#   docker compose up -d --build
+#
+# Usado no servidor da AWS EC2. A senha do banco vem do arquivo .env
+# (que nao vai para o git); sem ele, usa "estoque" como padrao.
+
+services:
+
+  banco:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: estoque
+      POSTGRES_USER: estoque
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-estoque}
+    # Os dados ficam num volume, senao sumiriam a cada atualizacao do container
+    volumes:
+      - dados-banco:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U estoque -d estoque"]
+      interval: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      banco:
+        condition: service_healthy
+    environment:
+      DB_HOST: banco
+      DB_NAME: estoque
+      DB_USER: estoque
+      DB_PASSWORD: ${DB_PASSWORD:-estoque}
+    # Porta 80 do servidor aponta para a 8080 da aplicacao,
+    # assim o endereco fica so http://IP-DO-SERVIDOR/
+    ports:
+      - "80:8080"
+
+volumes:
+  dados-banco:

@@ -68,6 +68,9 @@ public interface PastilhaRepository extends JpaRepository<Pastilha, Long> {
             + "FROM Pastilha p WHERE p.ativo = TRUE")
     ResumoPastilhas buscarResumo();
 
+    // Todas as pastilhas ativas, usado nos indicadores e no relatorio
+    List<Pastilha> findByAtivoTrueOrderByCodigoAsc();
+
     // Lista os itens que precisam de reposicao, os mais criticos primeiro
     @Query("SELECT p FROM Pastilha p "
             + "WHERE p.ativo = TRUE AND p.saldoAtual <= p.nivelMinimo "

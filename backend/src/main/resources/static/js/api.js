@@ -107,6 +107,12 @@ const Fmt = {
 
 const Ui = {
 
+    // O layout grava o perfil de quem esta logado numa <meta> do cabecalho
+    admin() {
+        const perfil = document.querySelector('meta[name="perfil"]');
+        return perfil !== null && perfil.content === 'ADMIN';
+    },
+
     mostrar(elemento) {
         if (elemento) {
             elemento.classList.remove('oculto');

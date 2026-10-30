@@ -19,6 +19,9 @@
 
     let pagina = 0;
 
+    // So o ADMIN edita, inativa e reativa. O OPERADOR so consulta.
+    const admin = Ui.admin();
+
     function montarConsulta() {
         const p = new URLSearchParams();
         if (busca.value.trim() !== '') {
@@ -57,15 +60,17 @@
             '<td class="num" style="color: var(--muted);">' + Fmt.quantidade(p.nivelMinimo) + '</td>' +
             '<td class="num">' + Fmt.moeda(p.valorEmEstoque) + '</td>' +
             '<td>' + selo + '</td>' +
-            '<td class="acoes">' +
-            '  <a class="botao-texto" href="/pastilhas/' + p.id + '/editar">Editar</a>' + acao +
-            '</td>';
+            (admin
+                ? '<td class="acoes">' +
+                  '  <a class="botao-texto" href="/pastilhas/' + p.id + '/editar">Editar</a>' + acao +
+                  '</td>'
+                : '');
         return tr;
     }
 
     async function carregar() {
         Ui.esconder(erro);
-        Carregando.linhasTabela(corpoTabela, 6, 9);
+        Carregando.linhasTabela(corpoTabela, 6, admin ? 9 : 8);
         const consulta = montarConsulta();
         rota.textContent = 'GET /api/pastilhas?' + consulta.toString();
 

@@ -71,7 +71,8 @@
             '<td class="num" style="color: ' + cor + '; font-weight: 600;">' +
             sinal + Fmt.quantidade(m.quantidade) + '</td>' +
             '<td class="num">' + Fmt.quantidade(m.saldoApos) + '</td>' +
-            '<td style="color: var(--muted); font-size: 12.5px;">' + Ui.texto(m.documento || '–') + '</td>';
+            '<td style="color: var(--muted); font-size: 12.5px;">' + Ui.texto(m.documento || '–') + '</td>' +
+            '<td style="color: var(--muted); font-size: 12.5px;">' + Ui.texto(m.usuarioNome || '–') + '</td>';
         return tr;
     }
 
@@ -105,7 +106,7 @@
     }
 
     async function carregarHistorico() {
-        Carregando.linhasTabela(corpoHistorico, 3, 6);
+        Carregando.linhasTabela(corpoHistorico, 3, 7);
         try {
             const pg = await Api.get('/api/movimentacoes?size=15');
             const itens = pg.content || [];

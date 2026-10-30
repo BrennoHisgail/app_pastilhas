@@ -22,6 +22,9 @@
     <!-- O api.js le estes dois para mandar o token CSRF nas chamadas que alteram dados -->
     <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+    <!-- O JS usa para esconder os botoes que so o ADMIN pode usar -->
+    <meta name="perfil" th:if="${usuarioLogado != null}"
+          th:content="${usuarioLogado.admin} ? 'ADMIN' : 'OPERADOR'">
 </head>
 
 <body>
@@ -49,6 +52,11 @@
         <a class="topbar__link" th:classappend="${ativo == 'movimentacoes'} ? 'topbar__link--ativo'"
            th:href="@{/movimentacoes}"
            th:attrappend="aria-current=${ativo == 'movimentacoes'} ? 'page'">Movimentações</a>
+        <a class="topbar__link" th:classappend="${ativo == 'indicadores'} ? 'topbar__link--ativo'"
+           th:href="@{/indicadores}" th:attrappend="aria-current=${ativo == 'indicadores'} ? 'page'">Indicadores</a>
+        <a class="topbar__link" th:if="${usuarioLogado != null and usuarioLogado.admin}"
+           th:classappend="${ativo == 'usuarios'} ? 'topbar__link--ativo'"
+           th:href="@{/usuarios}" th:attrappend="aria-current=${ativo == 'usuarios'} ? 'page'">Usuários</a>
     </nav>
 
     <!-- usuarioLogado vem do SessaoWebAdvice -->

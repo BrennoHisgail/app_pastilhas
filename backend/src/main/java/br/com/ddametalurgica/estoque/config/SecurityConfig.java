@@ -39,9 +39,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/pastilhas/**").authenticated()
                         .requestMatchers("/api/pastilhas/**").hasRole("ADMIN")
 
-                        // Movimentacao e dashboard: OPERADOR tambem usa no dia a dia
+                        // Movimentacao, painel, indicadores e relatorios: OPERADOR tambem usa no dia a dia
                         .requestMatchers("/api/movimentacoes/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/dashboard/**", "/api/alertas/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/dashboard/**", "/api/alertas/**",
+                                "/api/indicadores/**", "/api/relatorios/**").authenticated()
 
                         // Gestao de usuarios: so ADMIN
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
@@ -49,7 +50,7 @@ public class SecurityConfig {
                         // Telas: cadastro/edicao de pastilha e gestao de usuario sao so do ADMIN
                         .requestMatchers("/pastilhas/nova", "/pastilhas/*/editar").hasRole("ADMIN")
                         .requestMatchers("/usuarios/**").hasRole("ADMIN")
-                        .requestMatchers("/", "/pastilhas", "/movimentacoes").authenticated()
+                        .requestMatchers("/", "/pastilhas", "/movimentacoes", "/indicadores").authenticated()
 
                         // Qualquer coisa nova que alguem adicionar depois fica fechada por padrao
                         .anyRequest().authenticated())

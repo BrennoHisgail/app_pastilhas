@@ -47,9 +47,11 @@ public class Movimentacao {
     @Column(name = "data_hora", nullable = false)
     private LocalDateTime dataHora;
 
-    // Quem fez o lancamento. Ainda nao e preenchido.
-    @Column(name = "usuario_id")
-    private Long usuarioId;
+    // Quem fez o lancamento. Fica nulo nos lancamentos antigos,
+    // feitos antes de existir o login.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
 
     @Column(name = "origem_destino", length = 160)
     private String origemDestino;
@@ -77,6 +79,17 @@ public class Movimentacao {
         this.documento = documento;
         this.origemDestino = origemDestino;
         this.observacao = observacao;
+    }
+
+    public Movimentacao(Pastilha pastilha,
+                        TipoMovimentacao tipo,
+                        BigDecimal quantidade,
+                        String documento,
+                        String origemDestino,
+                        String observacao,
+                        Usuario usuario) {
+        this(pastilha, tipo, quantidade, documento, origemDestino, observacao);
+        this.usuario = usuario;
     }
 
     @PrePersist
@@ -110,8 +123,8 @@ public class Movimentacao {
         return dataHora;
     }
 
-    public Long getUsuarioId() {
-        return usuarioId;
+    public Usuario getUsuario() {
+        return usuario;
     }
 
     public String getOrigemDestino() {

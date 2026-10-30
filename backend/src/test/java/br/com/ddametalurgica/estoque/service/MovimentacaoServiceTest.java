@@ -12,16 +12,19 @@ import br.com.ddametalurgica.estoque.Fabrica;
 import br.com.ddametalurgica.estoque.domain.Movimentacao;
 import br.com.ddametalurgica.estoque.domain.Pastilha;
 import br.com.ddametalurgica.estoque.domain.TipoMovimentacao;
+import br.com.ddametalurgica.estoque.domain.Usuario;
 import br.com.ddametalurgica.estoque.dto.MovimentacaoRequest;
 import br.com.ddametalurgica.estoque.dto.MovimentacaoResponse;
 import br.com.ddametalurgica.estoque.exception.RecursoNaoEncontradoException;
 import br.com.ddametalurgica.estoque.exception.RegraNegocioException;
 import br.com.ddametalurgica.estoque.repository.MovimentacaoRepository;
 import br.com.ddametalurgica.estoque.repository.PastilhaRepository;
+import br.com.ddametalurgica.estoque.security.UsuarioDetails;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,6 +37,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("MovimentacaoService - entradas, saidas e historico")
@@ -87,6 +92,44 @@ class MovimentacaoServiceTest {
 
             assertThat(service.registrarEntrada(pedido(new BigDecimal("10"))).saldoApos())
                     .isEqualByComparingTo("10");
+        }
+    }
+
+    @Nested
+    @DisplayName("quem lancou")
+    class QuemLancou {
+
+        @AfterEach
+        void sair() {
+            SecurityContextHolder.clearContext();
+        }
+
+        @Test
+        @DisplayName("grava o usuario logado na movimentacao")
+        void gravaUsuarioLogado() {
+            Usuario usuario = Fabrica.comId(Fabrica.usuario("operador@dda.com.br"), 5L);
+            UsuarioDetails logado = new UsuarioDetails(usuario);
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(logado, null, logado.getAuthorities()));
+            Pastilha pastilha = Fabrica.comId(
+                    Fabrica.pastilha("A1", new BigDecimal("100"), new BigDecimal("20")), 1L);
+            devolvePastilha(pastilha);
+
+            MovimentacaoResponse resposta = service.registrarEntrada(pedido(new BigDecimal("10")));
+
+            verify(repository).save(movimentacaoSalva.capture());
+            assertThat(movimentacaoSalva.getValue().getUsuario()).isSameAs(usuario);
+            assertThat(resposta.usuarioNome()).isEqualTo("Usuario de teste");
+        }
+
+        @Test
+        @DisplayName("sem ninguem logado a movimentacao fica sem usuario")
+        void semUsuario() {
+            Pastilha pastilha = Fabrica.comId(
+                    Fabrica.pastilha("A1", new BigDecimal("100"), new BigDecimal("20")), 1L);
+            devolvePastilha(pastilha);
+
+            assertThat(service.registrarEntrada(pedido(new BigDecimal("10"))).usuarioNome()).isNull();
         }
     }
 

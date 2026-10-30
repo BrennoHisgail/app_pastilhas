@@ -115,6 +115,7 @@
                     <span class="selo selo--neutro" id="totalMovs">–</span>
                     <span class="espacador"></span>
                     <span class="rota">GET /api/movimentacoes</span>
+                    <a th:href="@{/api/relatorios/movimentacoes.csv}" download>Exportar CSV</a>
                 </div>
 
                 <div class="tabela-rolavel">
@@ -128,6 +129,7 @@
                             <th scope="col" class="num">Qtd.</th>
                             <th scope="col" class="num">Saldo após</th>
                             <th scope="col">Documento</th>
+                            <th scope="col">Responsável</th>
                         </tr>
                         </thead>
                         <tbody id="corpoHistorico"></tbody>

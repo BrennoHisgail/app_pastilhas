@@ -11,7 +11,17 @@
         <h1 class="pagina__titulo">Catálogo de pastilhas</h1>
         <span class="pagina__legenda" id="resumo">carregando</span>
         <span class="espacador"></span>
-        <a class="botao botao--primario" th:href="@{/pastilhas/nova}">
+        <a class="botao botao--secundario" th:href="@{/api/relatorios/estoque.csv}" download>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3v12"></path>
+                <path d="m7 10 5 5 5-5"></path>
+                <path d="M5 21h14"></path>
+            </svg>
+            Exportar CSV
+        </a>
+        <a class="botao botao--primario" th:href="@{/pastilhas/nova}"
+           th:if="${usuarioLogado != null and usuarioLogado.admin}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 5v14"></path>
@@ -62,7 +72,7 @@
                     <th scope="col" class="num">Mínimo</th>
                     <th scope="col" class="num">Valor</th>
                     <th scope="col">Situação</th>
-                    <th scope="col" class="acoes">Ações</th>
+                    <th scope="col" class="acoes" th:if="${usuarioLogado != null and usuarioLogado.admin}">Ações</th>
                 </tr>
                 </thead>
                 <tbody id="corpoTabela"></tbody>

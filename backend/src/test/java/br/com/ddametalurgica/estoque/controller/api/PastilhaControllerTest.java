@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -40,12 +41,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithAnonymousUser;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(PastilhaController.class)
 @Import({SecurityConfig.class, ApiExceptionHandler.class})
 @DisplayName("PastilhaController - contrato HTTP do cadastro")
+@WithMockUser(roles = "ADMIN")
 class PastilhaControllerTest {
 
     @Autowired
@@ -115,7 +119,7 @@ class PastilhaControllerTest {
     void criaComLocation() throws Exception {
         when(service.criar(any())).thenReturn(resposta(7L, "CNMG120408"));
 
-        mvc.perform(post("/api/pastilhas")
+        mvc.perform(post("/api/pastilhas").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Fabrica.requisicao("CNMG120408"))))
                 .andExpect(status().isCreated())
@@ -128,7 +132,7 @@ class PastilhaControllerTest {
     void recusaCamposFaltando() throws Exception {
         PastilhaRequest vazia = new PastilhaRequest(" ", "", null, null, null, null, null, null);
 
-        mvc.perform(post("/api/pastilhas")
+        mvc.perform(post("/api/pastilhas").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(vazia)))
                 .andExpect(status().isBadRequest())
@@ -148,7 +152,7 @@ class PastilhaControllerTest {
                 "X1", "Teste", "Torneamento", UnidadeMedida.UN,
                 new BigDecimal("-1"), new BigDecimal("-2"), -3, new BigDecimal("-4"));
 
-        mvc.perform(post("/api/pastilhas")
+        mvc.perform(post("/api/pastilhas").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(negativa)))
                 .andExpect(status().isBadRequest())
@@ -163,7 +167,7 @@ class PastilhaControllerTest {
     void recusaCodigoDuplicado() throws Exception {
         when(service.criar(any())).thenThrow(new RegraNegocioException("Ja existe uma pastilha com o codigo X1."));
 
-        mvc.perform(post("/api/pastilhas")
+        mvc.perform(post("/api/pastilhas").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Fabrica.requisicao("X1"))))
                 .andExpect(status().isConflict())
@@ -180,7 +184,7 @@ class PastilhaControllerTest {
                  "leadTimeDias":1,"estoqueSeguranca":1}
                 """;
 
-        mvc.perform(post("/api/pastilhas").contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mvc.perform(post("/api/pastilhas").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Dados invalidos"));
     }
@@ -188,7 +192,7 @@ class PastilhaControllerTest {
     @Test
     @DisplayName("POST com JSON quebrado devolve 400, nao 500")
     void recusaJsonQuebrado() throws Exception {
-        mvc.perform(post("/api/pastilhas").contentType(MediaType.APPLICATION_JSON).content("{ isto nao e json"))
+        mvc.perform(post("/api/pastilhas").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{ isto nao e json"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -197,7 +201,7 @@ class PastilhaControllerTest {
     void atualiza() throws Exception {
         when(service.atualizar(eq(1L), any())).thenReturn(resposta(1L, "CNMG120408"));
 
-        mvc.perform(put("/api/pastilhas/1")
+        mvc.perform(put("/api/pastilhas/1").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Fabrica.requisicao("CNMG120408"))))
                 .andExpect(status().isOk())
@@ -209,7 +213,7 @@ class PastilhaControllerTest {
     void alteraNivelMinimo() throws Exception {
         when(service.alterarNivelMinimo(eq(1L), any(BigDecimal.class))).thenReturn(resposta(1L, "CNMG120408"));
 
-        mvc.perform(patch("/api/pastilhas/1/nivel-minimo")
+        mvc.perform(patch("/api/pastilhas/1/nivel-minimo").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nivelMinimo\": 150}"))
                 .andExpect(status().isOk());
@@ -220,7 +224,7 @@ class PastilhaControllerTest {
     @Test
     @DisplayName("PATCH nivel-minimo negativo devolve 400")
     void recusaNivelMinimoNegativo() throws Exception {
-        mvc.perform(patch("/api/pastilhas/1/nivel-minimo")
+        mvc.perform(patch("/api/pastilhas/1/nivel-minimo").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"nivelMinimo\": -5}"))
                 .andExpect(status().isBadRequest())
@@ -232,7 +236,7 @@ class PastilhaControllerTest {
     @Test
     @DisplayName("DELETE inativa e devolve 204 sem corpo")
     void inativa() throws Exception {
-        mvc.perform(delete("/api/pastilhas/1"))
+        mvc.perform(delete("/api/pastilhas/1").with(csrf()))
                 .andExpect(status().isNoContent())
                 .andExpect(content().string(""));
 
@@ -245,7 +249,7 @@ class PastilhaControllerTest {
         Mockito.doThrow(new RegraNegocioException("A pastilha X1 ja esta inativa."))
                 .when(service).inativar(1L);
 
-        mvc.perform(delete("/api/pastilhas/1"))
+        mvc.perform(delete("/api/pastilhas/1").with(csrf()))
                 .andExpect(status().isConflict());
     }
 
@@ -254,8 +258,39 @@ class PastilhaControllerTest {
     void reativa() throws Exception {
         when(service.reativar(1L)).thenReturn(resposta(1L, "CNMG120408"));
 
-        mvc.perform(patch("/api/pastilhas/1/reativar"))
+        mvc.perform(patch("/api/pastilhas/1/reativar").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.ativo").value(true));
+    }
+
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    @DisplayName("OPERADOR consulta as pastilhas normalmente")
+    void operadorConsulta() throws Exception {
+        when(service.listarCategorias()).thenReturn(List.of("Torneamento"));
+
+        mvc.perform(get("/api/pastilhas/categorias"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "OPERADOR")
+    @DisplayName("OPERADOR nao pode cadastrar pastilha: 403")
+    void operadorNaoCadastra() throws Exception {
+        mvc.perform(post("/api/pastilhas").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Fabrica.requisicao("CNMG120408"))))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.title").value("Acesso negado"));
+
+        verify(service, never()).criar(any());
+    }
+
+    @Test
+    @WithAnonymousUser
+    @DisplayName("sem login a API devolve 401 em vez de mandar para a tela de login")
+    void semLoginDevolve401() throws Exception {
+        mvc.perform(get("/api/pastilhas"))
+                .andExpect(status().isUnauthorized());
     }
 }

@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -30,12 +31,14 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(MovimentacaoController.class)
 @Import({SecurityConfig.class, ApiExceptionHandler.class})
 @DisplayName("MovimentacaoController - contrato HTTP das entradas e saidas")
+@WithMockUser(roles = "OPERADOR")
 class MovimentacaoControllerTest {
 
     private static final String CORPO_VALIDO = """
@@ -53,7 +56,7 @@ class MovimentacaoControllerTest {
         return new MovimentacaoResponse(
                 10L, 1L, "CNMG120408", "Pastilha de torneamento", tipo,
                 new BigDecimal("25"), new BigDecimal(saldoApos), LocalDateTime.now(),
-                "NF 12345", "Fornecedor Sandvik", "recebido");
+                "NF 12345", "Fornecedor Sandvik", "recebido", "Operador Demo");
     }
 
     @Test
@@ -61,7 +64,7 @@ class MovimentacaoControllerTest {
     void registraEntrada() throws Exception {
         when(service.registrarEntrada(any())).thenReturn(resposta(TipoMovimentacao.ENTRADA, "125"));
 
-        mvc.perform(post("/api/movimentacoes/entrada")
+        mvc.perform(post("/api/movimentacoes/entrada").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(CORPO_VALIDO))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/movimentacoes/10"))
@@ -74,7 +77,7 @@ class MovimentacaoControllerTest {
     void registraSaida() throws Exception {
         when(service.registrarSaida(any())).thenReturn(resposta(TipoMovimentacao.SAIDA, "75"));
 
-        mvc.perform(post("/api/movimentacoes/saida")
+        mvc.perform(post("/api/movimentacoes/saida").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(CORPO_VALIDO))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.tipo").value("SAIDA"))
@@ -87,7 +90,7 @@ class MovimentacaoControllerTest {
         when(service.registrarSaida(any())).thenThrow(new RegraNegocioException(
                 "Saldo insuficiente: a pastilha CNMG120408 tem 10 UN em estoque, e a saida pede 25."));
 
-        mvc.perform(post("/api/movimentacoes/saida")
+        mvc.perform(post("/api/movimentacoes/saida").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(CORPO_VALIDO))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.title").value("Regra de negocio violada"))
@@ -101,7 +104,7 @@ class MovimentacaoControllerTest {
         when(service.registrarEntrada(any()))
                 .thenThrow(new RecursoNaoEncontradoException("Pastilha 1 nao encontrada."));
 
-        mvc.perform(post("/api/movimentacoes/entrada")
+        mvc.perform(post("/api/movimentacoes/entrada").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(CORPO_VALIDO))
                 .andExpect(status().isNotFound());
     }
@@ -110,7 +113,7 @@ class MovimentacaoControllerTest {
     @DisplayName("quantidade zero ou negativa devolve 400 sem chamar o service")
     void recusaQuantidadeInvalida() throws Exception {
         for (String quantidade : List.of("0", "-5")) {
-            mvc.perform(post("/api/movimentacoes/entrada")
+            mvc.perform(post("/api/movimentacoes/entrada").with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content("{\"pastilhaId\":1,\"quantidade\":" + quantidade + "}"))
                     .andExpect(status().isBadRequest())
@@ -123,7 +126,7 @@ class MovimentacaoControllerTest {
     @Test
     @DisplayName("requisicao sem pastilha e sem quantidade devolve 400 apontando os dois campos")
     void recusaCamposObrigatorios() throws Exception {
-        mvc.perform(post("/api/movimentacoes/saida")
+        mvc.perform(post("/api/movimentacoes/saida").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.erros.pastilhaId").exists())
@@ -135,7 +138,7 @@ class MovimentacaoControllerTest {
     void recusaDocumentoLongoDemais() throws Exception {
         String documento = "X".repeat(61);
 
-        mvc.perform(post("/api/movimentacoes/entrada")
+        mvc.perform(post("/api/movimentacoes/entrada").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"pastilhaId\":1,\"quantidade\":1,\"documento\":\"" + documento + "\"}"))
                 .andExpect(status().isBadRequest())

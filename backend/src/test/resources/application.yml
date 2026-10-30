@@ -1,0 +1,38 @@
+# Configuracao usada so quando roda "mvn test".
+#
+# Os testes nao usam o PostgreSQL: sobem um H2 em memoria, que nasce
+# vazio a cada execucao e some no fim. Assim qualquer pessoa da equipe
+# consegue rodar os testes sem instalar banco nenhum.
+spring:
+  datasource:
+    url: jdbc:h2:mem:estoque_teste;MODE=PostgreSQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    # Em producao quem cria as tabelas e o Flyway. No teste deixamos o
+    # Hibernate criar a partir das entidades, porque os scripts SQL sao
+    # escritos em dialeto PostgreSQL.
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+    # o @DataJpaTest liga o show-sql sozinho; desligamos para o
+    # relatorio do "mvn test" ficar legivel
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+  flyway:
+    enabled: false
+
+  sql:
+    init:
+      mode: never
+
+logging:
+  level:
+    root: WARN
+    br.com.ddametalurgica.estoque: WARN
+    org.springframework: WARN

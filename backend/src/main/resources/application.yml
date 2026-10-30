@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: controle-estoque
+
+  datasource:
+    # Os valores depois dos dois pontos sao o padrao, usado quando
+    # a variavel nao existe - que e o caso da nossa maquina.
+    # Na nuvem o servidor define essas variaveis.
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:estoque}
+    username: ${DB_USER:estoque}
+    password: ${DB_PASSWORD:estoque}
+
+  jpa:
+    # validate: quem cria as tabelas e o Flyway, o Hibernate so confere
+    # se as entidades batem com o banco
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+server:
+  # Em producao o servico define a porta pela variavel PORT.
+  # Rodando na nossa maquina nao existe essa variavel, entao usa 8080.
+  port: ${PORT:8080}
+
+logging:
+  level:
+    br.com.ddametalurgica.estoque: DEBUG

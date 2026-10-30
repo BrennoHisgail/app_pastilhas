@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Painel')}"></head>
+<body>
+
+<header th:replace="~{fragments/layout :: topbar('painel')}"></header>
+
+<main class="pagina" id="conteudo">
+
+    <div class="pagina__cabecalho">
+        <h1 class="pagina__titulo">Painel de indicadores</h1>
+        <span class="pagina__legenda">Situação do estoque agora</span>
+        <span class="espacador"></span>
+        <span class="rota">GET /api/dashboard/indicadores</span>
+    </div>
+
+    <div class="indicadores">
+        <div class="indicador">
+            <div class="indicador__rotulo">Itens cadastrados</div>
+            <div class="indicador__valor" id="kpiItens">–</div>
+            <div class="indicador__nota" id="kpiCategorias">carregando</div>
+        </div>
+
+        <div class="indicador indicador--alerta">
+            <div class="indicador__rotulo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A63D17" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path>
+                    <path d="M12 9v4"></path>
+                    <path d="M12 17h.01"></path>
+                </svg>
+                Abaixo do mínimo
+            </div>
+            <div class="indicador__valor indicador__valor--alerta" id="kpiFalta">–</div>
+            <div class="indicador__nota">precisam de reposição</div>
+        </div>
+
+        <div class="indicador">
+            <div class="indicador__rotulo">Valor em estoque</div>
+            <div class="indicador__valor" id="kpiValor">–</div>
+            <div class="indicador__nota">saldo x custo unitário</div>
+        </div>
+
+        <div class="indicador">
+            <div class="indicador__rotulo">Movimentações (30 d)</div>
+            <div class="indicador__valor indicador__valor--neutro" id="kpiMovs">–</div>
+            <div class="indicador__nota">entradas e saídas no período</div>
+        </div>
+    </div>
+
+    <div class="colunas">
+
+        <section class="cartao coluna--principal">
+            <div class="cartao__cabecalho">
+                <h2 class="cartao__titulo">Itens que precisam de reposição</h2>
+                <span class="selo selo--alerta" id="totalAlertas">–</span>
+                <span class="espacador"></span>
+                <a th:href="@{/pastilhas(abaixoDoMinimo=true)}">Ver no catálogo</a>
+            </div>
+
+            <div class="tabela-rolavel">
+                <table class="tabela">
+                    <caption class="oculto">Pastilhas com saldo igual ou abaixo do nível mínimo</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Categoria</th>
+                        <th scope="col">Saldo x mínimo</th>
+                        <th scope="col" class="num">Saldo</th>
+                        <th scope="col" class="num">Mínimo</th>
+                        <th scope="col" class="num">Repor</th>
+                    </tr>
+                    </thead>
+                    <tbody id="corpoAlertas"></tbody>
+                </table>
+            </div>
+
+            <div class="vazio oculto" id="alertasVazio">
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2E6B4F" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"></circle>
+                    <path d="m8.5 12 2.5 2.5 4.5-5"></path>
+                </svg>
+                <div class="vazio__titulo">Nenhum item abaixo do mínimo</div>
+                <div class="vazio__texto">Todo o catálogo está com saldo acima do nível mínimo definido.</div>
+            </div>
+
+            <div class="cartao__rodape">
+                O alerta dispara quando o saldo atinge o nível mínimo. A próxima etapa é trocar esse limite fixo
+                pelo Ponto de Pedido, <strong>PP = (d × t) + Qs</strong>, que avisa antes da ruptura.
+            </div>
+        </section>
+
+        <section class="cartao coluna--lateral">
+            <div class="cartao__cabecalho">
+                <h2 class="cartao__titulo">Movimentações recentes</h2>
+            </div>
+
+            <div id="listaRecentes"></div>
+
+            <div class="vazio oculto" id="recentesVazio">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#B4B0A8" stroke-width="1.5"
+                     stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 12h4l3 8 4-16 3 8h4"></path>
+                </svg>
+                <div class="vazio__titulo">Nenhuma movimentação registrada</div>
+                <div class="vazio__texto">
+                    Os saldos atuais vieram da carga inicial do banco. A partir daqui, todo saldo só muda por
+                    entrada ou saída.
+                </div>
+                <a class="botao botao--primario" th:href="@{/movimentacoes}">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 5v14"></path>
+                        <path d="M5 12h14"></path>
+                    </svg>
+                    Registrar movimentação
+                </a>
+            </div>
+
+            <div class="cartao__rodape">
+                Giro, Cobertura e Curva ABC entram aqui quando houver histórico suficiente para calcular.
+            </div>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: rodape}"></footer>
+<div th:replace="~{fragments/layout :: dialogo}"></div>
+<div th:replace="~{fragments/layout :: toasts}"></div>
+
+<script th:src="@{/js/api.js}"></script>
+<script th:src="@{/js/painel.js}"></script>
+</body>
+</html>

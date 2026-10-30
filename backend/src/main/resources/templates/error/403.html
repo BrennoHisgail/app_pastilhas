@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Acesso negado')}"></head>
+<body>
+
+<header th:replace="~{fragments/layout :: topbar('')}"></header>
+
+<main class="pagina" id="conteudo">
+    <section class="cartao">
+        <div class="vazio" style="padding: 72px 24px;">
+            <span style="font-family: var(--display); font-size: 88px; font-weight: 700; line-height: 1; color: var(--line);">403</span>
+            <div class="vazio__titulo" style="font-size: 19px;">Acesso negado</div>
+            <div class="vazio__texto">
+                Seu perfil não tem permissão para abrir esta página. Fale com um administrador se precisar de acesso.
+            </div>
+            <a class="botao botao--primario" style="margin-top: 8px;" th:href="@{/}">Voltar ao painel</a>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: rodape}"></footer>
+<script th:src="@{/js/api.js}"></script>
+</body>
+</html>

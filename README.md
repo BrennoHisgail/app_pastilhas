@@ -54,13 +54,23 @@ A documentação da API (Swagger) fica em http://localhost:8080/swagger-ui.html 
 abre sem login. Para testar as rotas por ela, entre no sistema antes na mesma
 janela do navegador.
 
-O documento OpenAPI é gerado pela aplicação em `/v3/api-docs` (JSON) e
-`/v3/api-docs.yaml` (YAML). Uma cópia exportada fica em
-[`docs/openapi.yaml`](docs/openapi.yaml); para atualizá-la depois de mudar a API:
+### Contrato da API (OpenAPI)
+
+O documento OpenAPI é gerado a partir do código (abordagem *code-first*, com o
+springdoc) e fica disponível em `/v3/api-docs` (JSON) e `/v3/api-docs.yaml` (YAML).
+
+O contrato é versionado em [`docs/openapi.yaml`](docs/openapi.yaml). O teste
+`ContratoOpenApiTest` falha se o código gerar um documento diferente desse arquivo,
+então qualquer mudança na API precisa atualizar o contrato no mesmo PR, onde ela
+fica visível para revisão. Depois de uma mudança intencional, regrave o arquivo
+(dentro de `backend/`):
 
 ```bash
-curl http://localhost:8080/v3/api-docs.yaml -o docs/openapi.yaml
+./mvnw test -Dtest=ContratoOpenApiTest -Dcontrato.atualizar=true
 ```
+
+O `OpenApiDocumentacaoTest` confere ainda que o documento descreve o comportamento
+real: o perfil de cada rota é testado com uma requisição como OPERADOR.
 
 Se o seu PostgreSQL estiver em outro endereço ou com outra senha, dá para mudar
 sem mexer no código, usando as variáveis de ambiente `DB_HOST`, `DB_PORT`,

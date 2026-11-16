@@ -20,6 +20,8 @@ import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import io.swagger.v3.oas.models.tags.Tag;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.springdoc.core.customizers.OpenApiCustomizer;
@@ -97,6 +99,10 @@ public class OpenApiConfig {
                 adicionarErros(operacao, caminho, alteraDados);
             }));
             adicionarLoginLogout(openApi);
+            // Ordem fixa das tags: o docs/openapi.yaml nao muda entre execucoes
+            if (openApi.getTags() != null) {
+                openApi.getTags().sort(Comparator.comparing(Tag::getName));
+            }
         };
     }
 

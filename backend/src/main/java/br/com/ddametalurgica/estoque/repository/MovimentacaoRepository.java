@@ -3,6 +3,7 @@ package br.com.ddametalurgica.estoque.repository;
 import br.com.ddametalurgica.estoque.domain.Movimentacao;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -24,6 +25,10 @@ public interface MovimentacaoRepository extends JpaRepository<Movimentacao, Long
                               @Param("inicio") LocalDateTime inicio,
                               @Param("fim") LocalDateTime fim,
                               Pageable pageable);
+
+    // Uma movimentacao so, ja com a pastilha e o usuario carregados
+    @EntityGraph(attributePaths = {"pastilha", "usuario"})
+    Optional<Movimentacao> findComDetalhesById(Long id);
 
     // As ultimas movimentacoes que aparecem no painel.
     // O Spring Data monta a consulta sozinho pelo nome do metodo.

@@ -180,15 +180,16 @@ class PastilhaServiceTest {
         }
 
         @Test
-        @DisplayName("recusa inativar uma pastilha que ja esta inativa")
-        void recusaInativarDuasVezes() {
+        @DisplayName("inativar uma pastilha ja inativa nao da erro nem grava de novo")
+        void inativarDuasVezesEIdempotente() {
             Pastilha existente = Fabrica.comId(Fabrica.pastilha("CNMG120408"), 1L);
             existente.inativar();
             when(repository.findById(1L)).thenReturn(Optional.of(existente));
 
-            assertThatThrownBy(() -> service.inativar(1L))
-                    .isInstanceOf(RegraNegocioException.class)
-                    .hasMessageContaining("ja esta inativa");
+            service.inativar(1L);
+
+            assertThat(existente.isAtivo()).isFalse();
+            verify(repository, never()).save(any());
         }
 
         @Test

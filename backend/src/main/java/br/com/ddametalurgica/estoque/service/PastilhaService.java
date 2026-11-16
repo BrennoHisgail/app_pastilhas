@@ -77,12 +77,14 @@ public class PastilhaService {
     }
 
     // Inativa a pastilha em vez de apagar, porque existem
-    // movimentacoes no banco que apontam para ela
+    // movimentacoes no banco que apontam para ela.
+    // Inativar de novo uma pastilha ja inativa nao e erro: o DELETE do HTTP
+    // e idempotente, repetir o pedido deixa o recurso no mesmo estado.
     @Transactional
     public void inativar(Long id) {
         Pastilha pastilha = obrigatoria(id);
         if (!pastilha.isAtivo()) {
-            throw new RegraNegocioException("A pastilha " + pastilha.getCodigo() + " ja esta inativa.");
+            return;
         }
         pastilha.inativar();
         repository.save(pastilha);

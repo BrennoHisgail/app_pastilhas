@@ -172,16 +172,15 @@ class UsuarioServiceTest {
         }
 
         @Test
-        @DisplayName("recusa inativar um usuario que ja esta inativo")
-        void recusaInativarDuasVezes() {
+        @DisplayName("inativar um usuario ja inativo nao da erro nem grava de novo")
+        void inativarDuasVezesEIdempotente() {
             Usuario existente = Fabrica.comId(Fabrica.usuario("fulana@dda.com.br"), 1L);
             existente.inativar();
             when(repository.findById(1L)).thenReturn(Optional.of(existente));
 
-            assertThatThrownBy(() -> service.inativar(1L))
-                    .isInstanceOf(RegraNegocioException.class)
-                    .hasMessageContaining("ja esta inativo");
+            service.inativar(1L);
 
+            assertThat(existente.isAtivo()).isFalse();
             verify(repository, never()).save(any());
         }
 

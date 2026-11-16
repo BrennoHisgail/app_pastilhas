@@ -6,8 +6,9 @@ import br.com.ddametalurgica.estoque.domain.TipoMovimentacao;
 import br.com.ddametalurgica.estoque.domain.Usuario;
 import br.com.ddametalurgica.estoque.dto.MovimentacaoRequest;
 import br.com.ddametalurgica.estoque.dto.MovimentacaoResponse;
+import br.com.ddametalurgica.estoque.exception.DadosInvalidosException;
+import br.com.ddametalurgica.estoque.exception.OperacaoNaoPermitidaException;
 import br.com.ddametalurgica.estoque.exception.RecursoNaoEncontradoException;
-import br.com.ddametalurgica.estoque.exception.RegraNegocioException;
 import br.com.ddametalurgica.estoque.repository.MovimentacaoRepository;
 import br.com.ddametalurgica.estoque.repository.PastilhaRepository;
 import br.com.ddametalurgica.estoque.security.UsuarioDetails;
@@ -47,6 +48,13 @@ public class MovimentacaoService {
     }
 
     @Transactional(readOnly = true)
+    public MovimentacaoResponse buscarPorId(Long id) {
+        return repository.findComDetalhesById(id)
+                .map(MovimentacaoResponse::de)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Movimentacao " + id + " nao encontrada."));
+    }
+
+    @Transactional(readOnly = true)
     public Page<MovimentacaoResponse> historico(Long pastilhaId, LocalDate de, LocalDate ate, Pageable pageable) {
         // Quando o usuario nao informa as datas usamos um periodo bem grande,
         // assim a consulta do repositorio nao precisa tratar campo nulo.
@@ -54,7 +62,7 @@ public class MovimentacaoService {
         LocalDateTime fim = ate == null ? LocalDateTime.now().plusYears(1) : ate.atTime(LocalTime.MAX);
 
         if (inicio.isAfter(fim)) {
-            throw new RegraNegocioException("A data inicial nao pode ser posterior a data final.");
+            throw new DadosInvalidosException("A data inicial nao pode ser posterior a data final.");
         }
 
         return repository
@@ -71,13 +79,13 @@ public class MovimentacaoService {
                         "Pastilha " + dados.pastilhaId() + " nao encontrada."));
 
         if (!pastilha.isAtivo()) {
-            throw new RegraNegocioException(
+            throw new OperacaoNaoPermitidaException(
                     "A pastilha " + pastilha.getCodigo() + " esta inativa e nao aceita movimentacao.");
         }
 
         // Na saida precisamos conferir se tem saldo, senao o estoque ficaria negativo
         if (tipo == TipoMovimentacao.SAIDA && !pastilha.temSaldoPara(dados.quantidade())) {
-            throw new RegraNegocioException(
+            throw new OperacaoNaoPermitidaException(
                     "Saldo insuficiente: a pastilha " + pastilha.getCodigo() + " tem "
                             + formatar(pastilha.getSaldoAtual()) + " "
                             + pastilha.getUnidadeMedida() + " em estoque, e a saida pede "

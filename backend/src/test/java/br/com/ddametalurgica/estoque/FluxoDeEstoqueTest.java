@@ -124,7 +124,7 @@ class FluxoDeEstoqueTest {
         long id = cadastrar("WNMG080408");
         movimentar("entrada", id, "10", 201);
 
-        movimentar("saida", id, "11", 409);
+        movimentar("saida", id, "11", 422);
 
         mvc.perform(get("/api/pastilhas/" + id)).andExpect(jsonPath("$.saldoAtual").value(10));
         // a movimentacao recusada nao pode ter sido gravada
@@ -139,8 +139,8 @@ class FluxoDeEstoqueTest {
 
         mvc.perform(delete("/api/pastilhas/" + id).with(csrf())).andExpect(status().isNoContent());
 
-        movimentar("entrada", id, "5", 409);
-        movimentar("saida", id, "5", 409);
+        movimentar("entrada", id, "5", 422);
+        movimentar("saida", id, "5", 422);
         assertThat(movimentacaoRepository.count()).isEqualTo(1);
     }
 

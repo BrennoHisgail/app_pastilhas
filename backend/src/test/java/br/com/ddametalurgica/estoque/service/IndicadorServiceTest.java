@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import br.com.ddametalurgica.estoque.domain.ClasseAbc;
 import br.com.ddametalurgica.estoque.Fabrica;
 import br.com.ddametalurgica.estoque.domain.Pastilha;
 import br.com.ddametalurgica.estoque.domain.TipoMovimentacao;
@@ -100,7 +101,7 @@ class IndicadorServiceTest {
         assertThat(resultado.itens()).extracting(IndicadorPastilhaResponse::codigo)
                 .containsExactly("A1", "B2", "D4", "C3");
         assertThat(resultado.itens()).extracting(IndicadorPastilhaResponse::classeAbc)
-                .containsExactly("A", "A", "B", "C");
+                .containsExactly(ClasseAbc.A, ClasseAbc.A, ClasseAbc.B, ClasseAbc.C);
         assertThat(item("B2").percentualAcumulado()).isEqualByComparingTo("90");
         assertThat(resultado.classeA()).isEqualTo(2);
         assertThat(resultado.classeB()).isEqualTo(1);

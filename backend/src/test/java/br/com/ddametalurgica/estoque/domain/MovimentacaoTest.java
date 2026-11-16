@@ -19,7 +19,7 @@ class MovimentacaoTest {
         pastilha.registrarEntrada(new BigDecimal("30"));
 
         Movimentacao movimentacao = new Movimentacao(
-                pastilha, TipoMovimentacao.ENTRADA, new BigDecimal("30"), "NF 1", "Fornecedor", null);
+                pastilha, TipoMovimentacao.ENTRADA, new BigDecimal("30"), "NF 1", "Fornecedor", null, null);
 
         assertThat(movimentacao.getSaldoApos()).isEqualByComparingTo("130");
         assertThat(movimentacao.getQuantidade()).isEqualByComparingTo("30");
@@ -33,7 +33,7 @@ class MovimentacaoTest {
     @DisplayName("data e hora sao preenchidas na gravacao quando vem vazias")
     void preencheDataHoraNaGravacao() {
         Movimentacao movimentacao = new Movimentacao(
-                Fabrica.pastilha("A1"), TipoMovimentacao.SAIDA, BigDecimal.ONE, null, null, null);
+                Fabrica.pastilha("A1"), TipoMovimentacao.SAIDA, BigDecimal.ONE, null, null, null, null);
         assertThat(movimentacao.getDataHora()).isNull();
 
         ReflectionTestUtils.invokeMethod(movimentacao, "aoCriar");
@@ -47,7 +47,7 @@ class MovimentacaoTest {
     void naoSobrescreveDataHora() {
         LocalDateTime ontem = LocalDateTime.now().minusDays(1);
         Movimentacao movimentacao = new Movimentacao(
-                Fabrica.pastilha("A1"), TipoMovimentacao.SAIDA, BigDecimal.ONE, null, null, null);
+                Fabrica.pastilha("A1"), TipoMovimentacao.SAIDA, BigDecimal.ONE, null, null, null, null);
         ReflectionTestUtils.setField(movimentacao, "dataHora", ontem);
 
         ReflectionTestUtils.invokeMethod(movimentacao, "aoCriar");

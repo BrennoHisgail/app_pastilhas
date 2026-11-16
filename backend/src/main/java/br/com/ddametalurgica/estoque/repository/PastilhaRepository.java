@@ -2,7 +2,6 @@ package br.com.ddametalurgica.estoque.repository;
 
 import br.com.ddametalurgica.estoque.domain.Pastilha;
 import jakarta.persistence.LockModeType;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
@@ -18,8 +17,6 @@ public interface PastilhaRepository extends JpaRepository<Pastilha, Long> {
 
     // Usado para nao deixar cadastrar dois codigos iguais
     boolean existsByCodigoIgnoreCase(String codigo);
-
-    Optional<Pastilha> findByCodigoIgnoreCase(String codigo);
 
     // Busca a pastilha travando a linha no banco (SELECT ... FOR UPDATE).
     // Usado na movimentacao: se duas saidas chegarem juntas, a segunda
@@ -47,20 +44,9 @@ public interface PastilhaRepository extends JpaRepository<Pastilha, Long> {
     @Query("SELECT DISTINCT p.categoria FROM Pastilha p WHERE p.ativo = TRUE ORDER BY p.categoria")
     List<String> listarCategorias();
 
-    @Query("SELECT COUNT(p) FROM Pastilha p WHERE p.ativo = TRUE")
-    long contarAtivas();
-
-    @Query("SELECT COUNT(p) FROM Pastilha p WHERE p.ativo = TRUE AND p.saldoAtual <= p.nivelMinimo")
-    long contarAbaixoDoMinimo();
-
-    @Query("SELECT COUNT(DISTINCT p.categoria) FROM Pastilha p WHERE p.ativo = TRUE")
-    long contarCategorias();
-
-    // COALESCE para devolver 0 em vez de null quando nao ha nenhuma pastilha
-    @Query("SELECT COALESCE(SUM(p.saldoAtual * p.custoUnitario), 0) FROM Pastilha p WHERE p.ativo = TRUE")
-    BigDecimal somarValorEmEstoque();
-
-    // Junta os 4 contadores acima numa consulta so, para o painel
+    // Os 4 numeros do painel numa consulta so: pastilhas ativas, categorias,
+    // itens em falta e valor em estoque. O COALESCE devolve 0 em vez de null
+    // quando nao ha nenhuma pastilha.
     @Query("SELECT new br.com.ddametalurgica.estoque.repository.ResumoPastilhas("
             + "COUNT(p), COUNT(DISTINCT p.categoria), "
             + "COALESCE(SUM(CASE WHEN p.saldoAtual <= p.nivelMinimo THEN 1L ELSE 0L END), 0L), "

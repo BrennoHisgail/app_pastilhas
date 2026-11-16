@@ -1,5 +1,6 @@
 package br.com.ddametalurgica.estoque.domain;
 
+import br.com.ddametalurgica.estoque.exception.OperacaoNaoPermitidaException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -22,7 +23,10 @@ import java.time.LocalDateTime;
 // alguem abre a tela.
 //
 // Repare que saldoAtual nao tem set: quem muda o saldo sao os
-// metodos registrarEntrada e registrarSaida la embaixo.
+// metodos registrarEntrada e registrarSaida la embaixo. E sao eles
+// que garantem as regras do saldo (pastilha ativa, saldo nunca
+// negativo), assim nenhum codigo de fora consegue deixar a pastilha
+// num estado invalido, mesmo que esqueca de conferir antes.
 @Entity
 @Table(name = "pastilha")
 public class Pastilha {
@@ -100,13 +104,47 @@ public class Pastilha {
 
     // Soma no saldo quando entra material
     public void registrarEntrada(BigDecimal quantidade) {
+        exigirQuantidadePositiva(quantidade);
+        exigirAtiva();
         this.saldoAtual = this.saldoAtual.add(quantidade);
     }
 
-    // Subtrai do saldo quando sai material.
-    // Antes de chamar tem que usar o temSaldoPara.
+    // Subtrai do saldo quando sai material. Recusa se nao tiver saldo,
+    // senao o estoque ficaria negativo.
     public void registrarSaida(BigDecimal quantidade) {
+        exigirQuantidadePositiva(quantidade);
+        exigirAtiva();
+        if (!temSaldoPara(quantidade)) {
+            throw new OperacaoNaoPermitidaException(
+                    "Saldo insuficiente: a pastilha " + codigo + " tem "
+                            + semZerosSobrando(saldoAtual) + " " + unidadeMedida
+                            + " em estoque, e a saida pede " + semZerosSobrando(quantidade) + ".");
+        }
         this.saldoAtual = this.saldoAtual.subtract(quantidade);
+    }
+
+    private void exigirAtiva() {
+        if (!ativo) {
+            throw new OperacaoNaoPermitidaException(
+                    "A pastilha " + codigo + " esta inativa e nao aceita movimentacao.");
+        }
+    }
+
+    // O DTO ja valida isso na entrada da API; aqui e a ultima garantia
+    private static void exigirQuantidadePositiva(BigDecimal quantidade) {
+        if (quantidade == null || quantidade.signum() <= 0) {
+            throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
+        }
+    }
+
+    // A coluna do banco guarda 3 casas decimais, entao 4 unidades vem como
+    // 4.000 e a mensagem fica estranha. Aqui tiramos os zeros do final.
+    private static String semZerosSobrando(BigDecimal valor) {
+        BigDecimal limpo = valor.stripTrailingZeros();
+        if (limpo.scale() < 0) {
+            limpo = limpo.setScale(0);
+        }
+        return limpo.toPlainString();
     }
 
     // Quanto de dinheiro esta parado nesta pastilha

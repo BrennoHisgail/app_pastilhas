@@ -1,5 +1,6 @@
 package br.com.ddametalurgica.estoque.dto;
 
+import br.com.ddametalurgica.estoque.domain.ClasseAbc;
 import br.com.ddametalurgica.estoque.domain.UnidadeMedida;
 import java.math.BigDecimal;
 
@@ -20,6 +21,6 @@ public record IndicadorPastilhaResponse(
         BigDecimal giro,
         BigDecimal valorConsumido,
         BigDecimal percentualAcumulado,
-        String classeAbc
+        ClasseAbc classeAbc
 ) {
 }

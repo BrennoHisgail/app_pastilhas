@@ -52,7 +52,7 @@ class MovimentacaoRepositoryTest {
 
     private void lancar(Pastilha pastilha, TipoMovimentacao tipo, String quantidade, LocalDateTime quando) {
         Movimentacao movimentacao = new Movimentacao(
-                pastilha, tipo, new BigDecimal(quantidade), "DOC", "origem", null);
+                pastilha, tipo, new BigDecimal(quantidade), "DOC", "origem", null, null);
         // A data normalmente e o momento da gravacao; aqui forcamos para
         // conseguir montar um historico espalhado no tempo.
         ReflectionTestUtils.setField(movimentacao, "dataHora", quando);

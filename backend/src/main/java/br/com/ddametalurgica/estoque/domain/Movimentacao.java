@@ -66,21 +66,7 @@ public class Movimentacao {
         // exigido pelo JPA
     }
 
-    public Movimentacao(Pastilha pastilha,
-                        TipoMovimentacao tipo,
-                        BigDecimal quantidade,
-                        String documento,
-                        String origemDestino,
-                        String observacao) {
-        this.pastilha = pastilha;
-        this.tipo = tipo;
-        this.quantidade = quantidade;
-        this.saldoApos = pastilha.getSaldoAtual();
-        this.documento = documento;
-        this.origemDestino = origemDestino;
-        this.observacao = observacao;
-    }
-
+    // usuario pode ser null: lancamentos feitos antes de existir o login
     public Movimentacao(Pastilha pastilha,
                         TipoMovimentacao tipo,
                         BigDecimal quantidade,
@@ -88,7 +74,13 @@ public class Movimentacao {
                         String origemDestino,
                         String observacao,
                         Usuario usuario) {
-        this(pastilha, tipo, quantidade, documento, origemDestino, observacao);
+        this.pastilha = pastilha;
+        this.tipo = tipo;
+        this.quantidade = quantidade;
+        this.saldoApos = pastilha.getSaldoAtual();
+        this.documento = documento;
+        this.origemDestino = origemDestino;
+        this.observacao = observacao;
         this.usuario = usuario;
     }
 

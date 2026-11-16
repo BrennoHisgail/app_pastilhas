@@ -1,8 +1,10 @@
 package br.com.ddametalurgica.estoque.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import br.com.ddametalurgica.estoque.Fabrica;
+import br.com.ddametalurgica.estoque.exception.OperacaoNaoPermitidaException;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -56,6 +58,41 @@ class PastilhaTest {
             Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("10"), BigDecimal.ZERO);
 
             assertThat(pastilha.temSaldoPara(new BigDecimal("10.000"))).isTrue();
+        }
+
+        @Test
+        @DisplayName("saida maior que o saldo e recusada pela propria pastilha e o saldo nao muda")
+        void saidaSemSaldoERecusada() {
+            Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("10"), BigDecimal.ZERO);
+
+            assertThatThrownBy(() -> pastilha.registrarSaida(new BigDecimal("11")))
+                    .isInstanceOf(OperacaoNaoPermitidaException.class)
+                    .hasMessageContaining("Saldo insuficiente");
+            assertThat(pastilha.getSaldoAtual()).isEqualByComparingTo("10");
+        }
+
+        @Test
+        @DisplayName("pastilha inativa recusa entrada e saida")
+        void inativaNaoMovimenta() {
+            Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("10"), BigDecimal.ZERO);
+            pastilha.inativar();
+
+            assertThatThrownBy(() -> pastilha.registrarEntrada(BigDecimal.ONE))
+                    .isInstanceOf(OperacaoNaoPermitidaException.class);
+            assertThatThrownBy(() -> pastilha.registrarSaida(BigDecimal.ONE))
+                    .isInstanceOf(OperacaoNaoPermitidaException.class);
+            assertThat(pastilha.getSaldoAtual()).isEqualByComparingTo("10");
+        }
+
+        @Test
+        @DisplayName("quantidade zero ou negativa e recusada")
+        void quantidadeInvalida() {
+            Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("10"), BigDecimal.ZERO);
+
+            assertThatThrownBy(() -> pastilha.registrarEntrada(BigDecimal.ZERO))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> pastilha.registrarSaida(new BigDecimal("-1")))
+                    .isInstanceOf(IllegalArgumentException.class);
         }
     }
 

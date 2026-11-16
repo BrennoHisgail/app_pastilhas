@@ -54,6 +54,14 @@ A documentação da API (Swagger) fica em http://localhost:8080/swagger-ui.html 
 abre sem login. Para testar as rotas por ela, entre no sistema antes na mesma
 janela do navegador.
 
+O documento OpenAPI é gerado pela aplicação em `/v3/api-docs` (JSON) e
+`/v3/api-docs.yaml` (YAML). Uma cópia exportada fica em
+[`docs/openapi.yaml`](docs/openapi.yaml); para atualizá-la depois de mudar a API:
+
+```bash
+curl http://localhost:8080/v3/api-docs.yaml -o docs/openapi.yaml
+```
+
 Se o seu PostgreSQL estiver em outro endereço ou com outra senha, dá para mudar
 sem mexer no código, usando as variáveis de ambiente `DB_HOST`, `DB_PORT`,
 `DB_NAME`, `DB_USER` e `DB_PASSWORD`.

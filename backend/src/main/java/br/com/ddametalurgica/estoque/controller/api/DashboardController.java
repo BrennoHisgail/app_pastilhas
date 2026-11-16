@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api")
 @Validated
-@Tag(name = "Indicadores", description = "Números do painel inicial")
+@Tag(name = "Indicadores", description = "Painel, alertas de reposição e indicadores de estoque")
 public class DashboardController {
 
     private final DashboardService service;

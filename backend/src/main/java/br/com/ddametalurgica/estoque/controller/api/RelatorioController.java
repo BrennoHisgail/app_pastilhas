@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 // Exportacao em CSV (RF14). O Content-Disposition: attachment faz o navegador baixar o arquivo.
 @RestController
 @RequestMapping("/api/relatorios")
-@Tag(name = "Relatorios", description = "Exportação do estoque e das movimentações em CSV")
+@Tag(name = "Relatórios", description = "Exportação do estoque e das movimentações em CSV")
 public class RelatorioController {
 
     private static final MediaType CSV = new MediaType("text", "csv", StandardCharsets.UTF_8);

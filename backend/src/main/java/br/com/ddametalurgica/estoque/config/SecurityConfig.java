@@ -32,7 +32,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/css/**", "/js/**", "/favicon.svg",
-                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/error").permitAll()
+                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml", "/error").permitAll()
 
                         // Pastilhas: qualquer um que esteja logado consulta;
                         // so ADMIN cadastra, edita, inativa ou muda o nivel minimo

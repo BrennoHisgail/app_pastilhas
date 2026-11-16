@@ -1,0 +1,1118 @@
+openapi: 3.1.0
+info:
+  title: API - Controle de Estoque de Pastilhas Industriais
+  description: |
+    MVP do sistema de controle de estoque da DDA Metalúrgica.
+
+    Projeto Aplicado III - ADS 4ª fase - UniSENAI.
+    Equipe: Brenno Meurer, Vinicius Barcellos, Pedro Ptelzi e Pedro Luis.
+  contact:
+    name: Equipe Projeto Aplicado III - UniSENAI
+  version: 0.1.0
+servers:
+- url: /
+tags:
+- name: Usuários
+  description: Gestão de usuários do sistema
+- name: Movimentações
+  description: "Entradas, saídas e histórico do estoque"
+- name: Relatórios
+  description: Exportação do estoque e das movimentações em CSV
+- name: Pastilhas
+  description: Cadastro e consulta das pastilhas
+- name: Indicadores
+  description: "Painel, alertas de reposição e indicadores de estoque"
+paths:
+  /api/usuarios/{id}:
+    get:
+      tags:
+      - Usuários
+      summary: Busca um usuário pelo id
+      operationId: buscarPorId
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioResponse"
+    put:
+      tags:
+      - Usuários
+      summary: Altera o nome e o perfil de um usuário
+      operationId: atualizar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsuarioUpdateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioResponse"
+    delete:
+      tags:
+      - Usuários
+      summary: Inativa o usuário
+      description: "Não apaga do banco, só marca como inativo para não perder o histó\
+        rico."
+      operationId: inativar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+  /api/pastilhas/{id}:
+    get:
+      tags:
+      - Pastilhas
+      summary: Busca uma pastilha pelo id
+      operationId: buscarPorId_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastilhaResponse"
+    put:
+      tags:
+      - Pastilhas
+      summary: Altera os dados de uma pastilha
+      operationId: atualizar_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PastilhaRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastilhaResponse"
+    delete:
+      tags:
+      - Pastilhas
+      summary: Inativa a pastilha
+      description: "Não apaga do banco, só marca como inativa para não perder o histó\
+        rico."
+      operationId: inativar_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+  /api/usuarios:
+    get:
+      tags:
+      - Usuários
+      summary: Lista os usuários com filtro e paginação
+      operationId: listar
+      parameters:
+      - name: busca
+        in: query
+        description: Trecho do nome ou do e-mail
+        required: false
+        schema:
+          type: string
+      - name: ativo
+        in: query
+        description: false lista os usuários inativados
+        required: false
+        schema:
+          type: boolean
+          default: true
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          default:
+          - "nome,ASC"
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageUsuarioResponse"
+    post:
+      tags:
+      - Usuários
+      summary: Cadastra um usuário novo
+      operationId: criar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsuarioCreateRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioResponse"
+  /api/pastilhas:
+    get:
+      tags:
+      - Pastilhas
+      summary: Lista as pastilhas com filtros e paginação
+      operationId: listar_1
+      parameters:
+      - name: busca
+        in: query
+        description: Trecho do código ou da descrição
+        required: false
+        schema:
+          type: string
+      - name: categoria
+        in: query
+        description: Categoria exata
+        required: false
+        schema:
+          type: string
+      - name: ativo
+        in: query
+        description: false lista as pastilhas inativadas
+        required: false
+        schema:
+          type: boolean
+          default: true
+      - name: abaixoDoMinimo
+        in: query
+        description: true traz só os itens que precisam de reposição
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          default:
+          - "codigo,ASC"
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PagePastilhaResponse"
+    post:
+      tags:
+      - Pastilhas
+      summary: Cadastra uma pastilha nova
+      description: "O saldo não é informado no cadastro: ele entra por uma movimentaç\
+        ão de entrada."
+      operationId: criar_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PastilhaRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastilhaResponse"
+  /api/movimentacoes/saida:
+    post:
+      tags:
+      - Movimentações
+      summary: Registra uma saída
+      description: "Subtrai do saldo. Se não houver estoque suficiente, devolve erro."
+      operationId: saida
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovimentacaoRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MovimentacaoResponse"
+  /api/movimentacoes/entrada:
+    post:
+      tags:
+      - Movimentações
+      summary: Registra uma entrada
+      description: Soma a quantidade no saldo da pastilha.
+      operationId: entrada
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovimentacaoRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MovimentacaoResponse"
+  /api/usuarios/{id}/senha:
+    patch:
+      tags:
+      - Usuários
+      summary: Redefine a senha de um usuário
+      operationId: alterarSenha
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlterarSenhaRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+  /api/usuarios/{id}/reativar:
+    patch:
+      tags:
+      - Usuários
+      summary: Volta o usuário para ativo
+      operationId: reativar
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioResponse"
+  /api/pastilhas/{id}/reativar:
+    patch:
+      tags:
+      - Pastilhas
+      summary: Volta a pastilha para ativa
+      operationId: reativar_1
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastilhaResponse"
+  /api/pastilhas/{id}/nivel-minimo:
+    patch:
+      tags:
+      - Pastilhas
+      summary: Altera só o nível mínimo da pastilha
+      operationId: alterarNivelMinimo
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NivelMinimoRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastilhaResponse"
+  /api/relatorios/movimentacoes.csv:
+    get:
+      tags:
+      - Relatórios
+      summary: Movimentações em CSV
+      description: "Mesmos filtros do histórico, sem paginação."
+      operationId: movimentacoes
+      parameters:
+      - name: pastilhaId
+        in: query
+        description: Filtra por pastilha; ausente traz todas
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: de
+        in: query
+        description: Data inicial (aaaa-mm-dd)
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: ate
+        in: query
+        description: Data final (aaaa-mm-dd)
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+  /api/relatorios/estoque.csv:
+    get:
+      tags:
+      - Relatórios
+      summary: Posição do estoque em CSV
+      description: Todas as pastilhas ativas com saldo e valor.
+      operationId: estoque
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: byte
+  /api/pastilhas/categorias:
+    get:
+      tags:
+      - Pastilhas
+      summary: Lista as categorias cadastradas
+      operationId: listarCategorias
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: string
+  /api/movimentacoes:
+    get:
+      tags:
+      - Movimentações
+      summary: Consulta o histórico
+      description: "Filtra por pastilha e por período, do mais novo para o mais antigo."
+      operationId: historico
+      parameters:
+      - name: pastilhaId
+        in: query
+        description: Filtra por pastilha; ausente traz todas
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - name: de
+        in: query
+        description: Data inicial (aaaa-mm-dd)
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: ate
+        in: query
+        description: Data final (aaaa-mm-dd)
+        required: false
+        schema:
+          type: string
+          format: date
+      - name: page
+        in: query
+        description: Zero-based page index (0..N)
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - name: size
+        in: query
+        description: The size of the page to be returned
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - name: sort
+        in: query
+        description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageMovimentacaoResponse"
+  /api/movimentacoes/{id}:
+    get:
+      tags:
+      - Movimentações
+      summary: Busca uma movimentação pelo id
+      description: É o endereço devolvido no cabeçalho Location ao registrar entrada
+        ou saída.
+      operationId: buscarPorId_2
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MovimentacaoResponse"
+  /api/indicadores/estoque:
+    get:
+      tags:
+      - Indicadores
+      summary: "Ponto de Pedido, Giro, Cobertura e Curva ABC"
+      description: Calcula os indicadores de cada pastilha ativa a partir das movimentações
+        dos últimos N dias. A lista vem na ordem da Curva ABC.
+      operationId: estoque_1
+      parameters:
+      - name: dias
+        in: query
+        description: "Quantos dias para trás olhar, de 1 a 365"
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 90
+          maximum: 365
+          minimum: 1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IndicadoresEstoqueResponse"
+  /api/dashboard/indicadores:
+    get:
+      tags:
+      - Indicadores
+      summary: Números do painel
+      description: "Itens cadastrados, itens em falta, valor em estoque e últimas\
+        \ movimentações."
+      operationId: indicadores
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IndicadoresResponse"
+  /api/alertas/reposicao:
+    get:
+      tags:
+      - Indicadores
+      summary: Itens que precisam de reposição
+      description: "Pastilhas que chegaram no nível mínimo, as mais críticas primeiro."
+      operationId: alertas
+      parameters:
+      - name: limite
+        in: query
+        description: "Quantos itens trazer, de 1 a 200"
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 50
+          maximum: 200
+          minimum: 1
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PastilhaResponse"
+components:
+  schemas:
+    UsuarioUpdateRequest:
+      type: object
+      description: Dados de edição de um usuário
+      properties:
+        nome:
+          type: string
+          example: Fulana da Silva
+          maxLength: 120
+          minLength: 0
+        perfil:
+          type: string
+          enum:
+          - ADMIN
+          - OPERADOR
+          example: OPERADOR
+      required:
+      - nome
+      - perfil
+    UsuarioResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        email:
+          type: string
+        perfil:
+          type: string
+          enum:
+          - ADMIN
+          - OPERADOR
+        ativo:
+          type: boolean
+        criadoEm:
+          type: string
+          format: date-time
+        atualizadoEm:
+          type: string
+          format: date-time
+    PastilhaRequest:
+      type: object
+      description: Dados de cadastro/edição de uma pastilha
+      properties:
+        codigo:
+          type: string
+          example: CNMG120408
+          maxLength: 40
+          minLength: 0
+        descricao:
+          type: string
+          example: Pastilha de torneamento CNMG 120408 metal duro
+          maxLength: 200
+          minLength: 0
+        categoria:
+          type: string
+          example: Torneamento
+          maxLength: 80
+          minLength: 0
+        unidadeMedida:
+          type: string
+          enum:
+          - UN
+          - PC
+          - CX
+          - KG
+          - M
+          example: UN
+        nivelMinimo:
+          type: number
+          description: Saldo a partir do qual o item entra na lista de reposição
+          example: 50
+        custoUnitario:
+          type: number
+          example: 38.9
+        leadTimeDias:
+          type: integer
+          format: int32
+          description: Tempo de reposição em dias (t do Ponto de Pedido)
+          example: 10
+        estoqueSeguranca:
+          type: number
+          description: Reserva técnica (Qs do Ponto de Pedido)
+          example: 20
+      required:
+      - categoria
+      - codigo
+      - custoUnitario
+      - descricao
+      - estoqueSeguranca
+      - leadTimeDias
+      - nivelMinimo
+      - unidadeMedida
+    PastilhaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        codigo:
+          type: string
+        descricao:
+          type: string
+        categoria:
+          type: string
+        unidadeMedida:
+          type: string
+          enum:
+          - UN
+          - PC
+          - CX
+          - KG
+          - M
+        nivelMinimo:
+          type: number
+        saldoAtual:
+          type: number
+        custoUnitario:
+          type: number
+        valorEmEstoque:
+          type: number
+        leadTimeDias:
+          type: integer
+          format: int32
+        estoqueSeguranca:
+          type: number
+        abaixoDoMinimo:
+          type: boolean
+        ativo:
+          type: boolean
+        criadoEm:
+          type: string
+          format: date-time
+        atualizadoEm:
+          type: string
+          format: date-time
+    UsuarioCreateRequest:
+      type: object
+      description: Dados de cadastro de um usuário
+      properties:
+        nome:
+          type: string
+          example: Fulana da Silva
+          maxLength: 120
+          minLength: 0
+        email:
+          type: string
+          format: email
+          example: fulana@dda.com.br
+          maxLength: 160
+          minLength: 0
+        senha:
+          type: string
+          example: senha123
+          maxLength: 2147483647
+          minLength: 8
+        perfil:
+          type: string
+          enum:
+          - ADMIN
+          - OPERADOR
+          example: OPERADOR
+      required:
+      - email
+      - nome
+      - perfil
+      - senha
+    MovimentacaoRequest:
+      type: object
+      description: Dados de uma movimentação de estoque
+      properties:
+        pastilhaId:
+          type: integer
+          format: int64
+          example: 1
+        quantidade:
+          type: number
+          example: 25
+        documento:
+          type: string
+          description: "Nota fiscal, ordem de produção ou requisição"
+          example: NF 12345
+          maxLength: 60
+          minLength: 0
+        origemDestino:
+          type: string
+          description: "Fornecedor na entrada, setor ou ordem na saída"
+          example: Fornecedor Sandvik
+          maxLength: 160
+          minLength: 0
+        observacao:
+          type: string
+          maxLength: 400
+          minLength: 0
+      required:
+      - pastilhaId
+      - quantidade
+    MovimentacaoResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        pastilhaId:
+          type: integer
+          format: int64
+        pastilhaCodigo:
+          type: string
+        pastilhaDescricao:
+          type: string
+        tipo:
+          type: string
+          enum:
+          - ENTRADA
+          - SAIDA
+          - AJUSTE
+        quantidade:
+          type: number
+        saldoApos:
+          type: number
+        dataHora:
+          type: string
+          format: date-time
+        documento:
+          type: string
+        origemDestino:
+          type: string
+        observacao:
+          type: string
+        usuarioNome:
+          type: string
+    AlterarSenhaRequest:
+      type: object
+      description: Nova senha do usuário
+      properties:
+        novaSenha:
+          type: string
+          example: novaSenha123
+          maxLength: 2147483647
+          minLength: 8
+      required:
+      - novaSenha
+    NivelMinimoRequest:
+      type: object
+      properties:
+        nivelMinimo:
+          type: number
+      required:
+      - nivelMinimo
+    PageUsuarioResponse:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsuarioResponse"
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        empty:
+          type: boolean
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        paged:
+          type: boolean
+        pageSize:
+          type: integer
+          format: int32
+        pageNumber:
+          type: integer
+          format: int32
+        unpaged:
+          type: boolean
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+    PagePastilhaResponse:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/PastilhaResponse"
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        empty:
+          type: boolean
+    PageMovimentacaoResponse:
+      type: object
+      properties:
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+        first:
+          type: boolean
+        last:
+          type: boolean
+        size:
+          type: integer
+          format: int32
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovimentacaoResponse"
+        number:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        empty:
+          type: boolean
+    IndicadorPastilhaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        codigo:
+          type: string
+        descricao:
+          type: string
+        unidadeMedida:
+          type: string
+          enum:
+          - UN
+          - PC
+          - CX
+          - KG
+          - M
+        saldoAtual:
+          type: number
+        consumoPeriodo:
+          type: number
+        consumoMedioDiario:
+          type: number
+        pontoDePedido:
+          type: number
+        abaixoDoPontoDePedido:
+          type: boolean
+        coberturaDias:
+          type: number
+        giro:
+          type: number
+        valorConsumido:
+          type: number
+        percentualAcumulado:
+          type: number
+        classeAbc:
+          type: string
+          enum:
+          - A
+          - B
+          - C
+    IndicadoresEstoqueResponse:
+      type: object
+      properties:
+        dias:
+          type: integer
+          format: int32
+        classeA:
+          type: integer
+          format: int64
+        classeB:
+          type: integer
+          format: int64
+        classeC:
+          type: integer
+          format: int64
+        abaixoDoPontoDePedido:
+          type: integer
+          format: int64
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/IndicadorPastilhaResponse"
+    IndicadoresResponse:
+      type: object
+      properties:
+        itensCadastrados:
+          type: integer
+          format: int64
+        categorias:
+          type: integer
+          format: int64
+        itensAbaixoDoMinimo:
+          type: integer
+          format: int64
+        valorEmEstoque:
+          type: number
+        movimentacoesUltimos30Dias:
+          type: integer
+          format: int64
+        alertasReposicao:
+          type: array
+          items:
+            $ref: "#/components/schemas/PastilhaResponse"
+        movimentacoesRecentes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovimentacaoResponse"

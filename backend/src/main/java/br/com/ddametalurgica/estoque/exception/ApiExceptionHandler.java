@@ -4,42 +4,72 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.mapping.PropertyReferenceException;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 // Concentra o tratamento de erro da API num lugar so.
 // Quando um service lanca uma excecao, o Spring cai aqui e
 // devolve a mensagem para a tela com o status HTTP certo.
 //
+// Estende o ResponseEntityExceptionHandler do Spring, que ja converte os
+// erros do proprio framework (metodo nao suportado, Content-Type errado,
+// parametro obrigatorio faltando...) para o mesmo formato ProblemDetail.
+//
 // So vale para os controllers de /api. As telas do pacote controller.web
 // continuam caindo nas paginas de erro HTML (templates/error), senao o
 // navegador mostraria JSON no lugar da pagina.
 @RestControllerAdvice(basePackages = "br.com.ddametalurgica.estoque.controller.api")
-public class ApiExceptionHandler {
+public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
+    // 404: o id pedido nao existe
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ProblemDetail naoEncontrado(RecursoNaoEncontradoException ex) {
         return problema(HttpStatus.NOT_FOUND, "Recurso nao encontrado", ex.getMessage());
     }
 
+    // 409: conflito com o estado atual (codigo duplicado, ultimo admin...)
     @ExceptionHandler(RegraNegocioException.class)
     public ProblemDetail regraNegocio(RegraNegocioException ex) {
         return problema(HttpStatus.CONFLICT, "Regra de negocio violada", ex.getMessage());
     }
 
-    // Este pega os erros das anotacoes de validacao (@NotNull, @Positive...)
+    // 422: pedido valido, mas o estoque nao permite (saldo insuficiente, pastilha inativa)
+    @ExceptionHandler(OperacaoNaoPermitidaException.class)
+    public ProblemDetail operacaoNaoPermitida(OperacaoNaoPermitidaException ex) {
+        return problema(HttpStatus.UNPROCESSABLE_ENTITY, "Operacao nao permitida", ex.getMessage());
+    }
+
+    // 400: dados que nao fazem sentido juntos (periodo invertido)
+    @ExceptionHandler(DadosInvalidosException.class)
+    public ProblemDetail dadosInvalidos(DadosInvalidosException ex) {
+        return problema(HttpStatus.BAD_REQUEST, "Dados invalidos", ex.getMessage());
+    }
+
+    // Erros das anotacoes de validacao (@NotNull, @Positive...)
     // aplicadas no corpo da requisicao (@RequestBody @Valid)
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ProblemDetail validacao(MethodArgumentNotValidException ex) {
+    @Override
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
+                                                                  HttpHeaders headers,
+                                                                  HttpStatusCode status,
+                                                                  WebRequest request) {
         Map<String, String> erros = new LinkedHashMap<>();
         for (FieldError campo : ex.getBindingResult().getFieldErrors()) {
             erros.putIfAbsent(campo.getField(),
@@ -47,10 +77,20 @@ public class ApiExceptionHandler {
         }
         ProblemDetail detalhe = problema(HttpStatus.BAD_REQUEST, "Dados invalidos", "Verifique os campos informados.");
         detalhe.setProperty("erros", erros);
-        return detalhe;
+        return ResponseEntity.badRequest().body(detalhe);
     }
 
-    // E este pega a validacao dos parametros de URL (@RequestParam @Min...)
+    // JSON malformado ou enum inexistente no corpo da requisicao
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
+                                                                  HttpHeaders headers,
+                                                                  HttpStatusCode status,
+                                                                  WebRequest request) {
+        return ResponseEntity.badRequest().body(problema(HttpStatus.BAD_REQUEST, "Dados invalidos",
+                "Nao foi possivel ler o corpo da requisicao. Confira o formato dos campos enviados."));
+    }
+
+    // Validacao dos parametros de URL (@RequestParam @Min...)
     @ExceptionHandler(ConstraintViolationException.class)
     public ProblemDetail validacaoDeParametro(ConstraintViolationException ex) {
         Map<String, String> erros = new LinkedHashMap<>();
@@ -72,13 +112,6 @@ public class ApiExceptionHandler {
                 "O valor informado em '" + ex.getName() + "' nao e valido.");
     }
 
-    // JSON malformado ou enum inexistente no corpo da requisicao
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ProblemDetail corpoInvalido(HttpMessageNotReadableException ex) {
-        return problema(HttpStatus.BAD_REQUEST, "Dados invalidos",
-                "Nao foi possivel ler o corpo da requisicao. Confira o formato dos campos enviados.");
-    }
-
     // Ordenacao pedindo um campo que a entidade nao tem, por exemplo ?sort=inexistente
     @ExceptionHandler(PropertyReferenceException.class)
     public ProblemDetail ordenacaoInvalida(PropertyReferenceException ex) {
@@ -96,12 +129,21 @@ public class ApiExceptionHandler {
                         + "Recarregue a tela e tente de novo.");
     }
 
-    // Outra pessoa alterou a mesma pastilha ao mesmo tempo (ver campo versao em Pastilha)
+    // Outra transacao alterou a mesma pastilha ao mesmo tempo (ver campo versao em Pastilha)
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ProblemDetail conflitoDeVersao(ObjectOptimisticLockingFailureException ex) {
         return problema(HttpStatus.CONFLICT, "Registro desatualizado",
-                "Esta pastilha foi alterada por outra operacao enquanto voce editava. "
+                "Esta pastilha foi alterada por outra operacao ao mesmo tempo. "
                         + "Recarregue a tela e tente novamente.");
+    }
+
+    // Qualquer erro inesperado: registra no log com o stack trace e devolve
+    // uma mensagem generica, sem expor detalhes internos para o cliente
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail erroInesperado(Exception ex) {
+        LOG.error("Erro inesperado na API", ex);
+        return problema(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno",
+                "Ocorreu um erro inesperado. Tente novamente; se continuar, avise o administrador.");
     }
 
     private ProblemDetail problema(HttpStatus status, String titulo, String mensagem) {

@@ -16,7 +16,8 @@ import br.com.ddametalurgica.estoque.domain.Usuario;
 import br.com.ddametalurgica.estoque.dto.MovimentacaoRequest;
 import br.com.ddametalurgica.estoque.dto.MovimentacaoResponse;
 import br.com.ddametalurgica.estoque.exception.RecursoNaoEncontradoException;
-import br.com.ddametalurgica.estoque.exception.RegraNegocioException;
+import br.com.ddametalurgica.estoque.exception.DadosInvalidosException;
+import br.com.ddametalurgica.estoque.exception.OperacaoNaoPermitidaException;
 import br.com.ddametalurgica.estoque.repository.MovimentacaoRepository;
 import br.com.ddametalurgica.estoque.repository.PastilhaRepository;
 import br.com.ddametalurgica.estoque.security.UsuarioDetails;
@@ -170,7 +171,7 @@ class MovimentacaoServiceTest {
             when(pastilhaRepository.buscarParaMovimentar(1L)).thenReturn(Optional.of(pastilha));
 
             assertThatThrownBy(() -> service.registrarSaida(pedido(new BigDecimal("11"))))
-                    .isInstanceOf(RegraNegocioException.class)
+                    .isInstanceOf(OperacaoNaoPermitidaException.class)
                     .hasMessageContaining("Saldo insuficiente");
 
             assertThat(pastilha.getSaldoAtual()).isEqualByComparingTo("10");
@@ -214,11 +215,11 @@ class MovimentacaoServiceTest {
             when(pastilhaRepository.buscarParaMovimentar(1L)).thenReturn(Optional.of(pastilha));
 
             assertThatThrownBy(() -> service.registrarEntrada(pedido(BigDecimal.TEN)))
-                    .isInstanceOf(RegraNegocioException.class)
+                    .isInstanceOf(OperacaoNaoPermitidaException.class)
                     .hasMessageContaining("inativa");
 
             assertThatThrownBy(() -> service.registrarSaida(pedido(BigDecimal.ONE)))
-                    .isInstanceOf(RegraNegocioException.class)
+                    .isInstanceOf(OperacaoNaoPermitidaException.class)
                     .hasMessageContaining("inativa");
         }
 
@@ -267,6 +268,31 @@ class MovimentacaoServiceTest {
     }
 
     @Nested
+    @DisplayName("busca por id")
+    class BuscaPorId {
+
+        @Test
+        @DisplayName("devolve a movimentacao com os dados da pastilha")
+        void encontra() {
+            Pastilha pastilha = Fabrica.comId(Fabrica.pastilha("A1"), 1L);
+            Movimentacao movimentacao = new Movimentacao(
+                    pastilha, TipoMovimentacao.ENTRADA, BigDecimal.TEN, null, null, null);
+            when(repository.findComDetalhesById(5L)).thenReturn(Optional.of(movimentacao));
+
+            assertThat(service.buscarPorId(5L).pastilhaCodigo()).isEqualTo("A1");
+        }
+
+        @Test
+        @DisplayName("id inexistente dispara RecursoNaoEncontradoException")
+        void naoEncontra() {
+            when(repository.findComDetalhesById(5L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> service.buscarPorId(5L))
+                    .isInstanceOf(RecursoNaoEncontradoException.class);
+        }
+    }
+
+    @Nested
     @DisplayName("historico")
     class Historico {
 
@@ -306,7 +332,7 @@ class MovimentacaoServiceTest {
         void periodoInvertido() {
             assertThatThrownBy(() -> service.historico(
                     null, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 2, 1), pagina))
-                    .isInstanceOf(RegraNegocioException.class)
+                    .isInstanceOf(DadosInvalidosException.class)
                     .hasMessageContaining("data inicial");
 
             verify(repository, never()).buscar(any(), any(), any(), any());

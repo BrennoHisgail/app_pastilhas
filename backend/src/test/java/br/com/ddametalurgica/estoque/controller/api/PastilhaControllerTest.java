@@ -244,13 +244,12 @@ class PastilhaControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE em pastilha ja inativa devolve 409")
-    void recusaInativarDuasVezes() throws Exception {
-        Mockito.doThrow(new RegraNegocioException("A pastilha X1 ja esta inativa."))
-                .when(service).inativar(1L);
-
+    @DisplayName("DELETE em pastilha ja inativa devolve 204 de novo (idempotente)")
+    void inativarDuasVezesEIdempotente() throws Exception {
         mvc.perform(delete("/api/pastilhas/1").with(csrf()))
-                .andExpect(status().isConflict());
+                .andExpect(status().isNoContent());
+        mvc.perform(delete("/api/pastilhas/1").with(csrf()))
+                .andExpect(status().isNoContent());
     }
 
     @Test

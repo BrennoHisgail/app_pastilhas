@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -17,7 +18,8 @@ import br.com.ddametalurgica.estoque.domain.TipoMovimentacao;
 import br.com.ddametalurgica.estoque.dto.MovimentacaoResponse;
 import br.com.ddametalurgica.estoque.exception.ApiExceptionHandler;
 import br.com.ddametalurgica.estoque.exception.RecursoNaoEncontradoException;
-import br.com.ddametalurgica.estoque.exception.RegraNegocioException;
+import br.com.ddametalurgica.estoque.exception.DadosInvalidosException;
+import br.com.ddametalurgica.estoque.exception.OperacaoNaoPermitidaException;
 import br.com.ddametalurgica.estoque.service.MovimentacaoService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -85,15 +87,15 @@ class MovimentacaoControllerTest {
     }
 
     @Test
-    @DisplayName("saida sem saldo devolve 409 com a mensagem para o usuario")
+    @DisplayName("saida sem saldo devolve 422 com a mensagem para o usuario")
     void saldoInsuficiente() throws Exception {
-        when(service.registrarSaida(any())).thenThrow(new RegraNegocioException(
+        when(service.registrarSaida(any())).thenThrow(new OperacaoNaoPermitidaException(
                 "Saldo insuficiente: a pastilha CNMG120408 tem 10 UN em estoque, e a saida pede 25."));
 
         mvc.perform(post("/api/movimentacoes/saida").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(CORPO_VALIDO))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.title").value("Regra de negocio violada"))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.title").value("Operacao nao permitida"))
                 .andExpect(jsonPath("$.detail").value(
                         org.hamcrest.Matchers.containsString("Saldo insuficiente")));
     }
@@ -180,12 +182,54 @@ class MovimentacaoControllerTest {
     }
 
     @Test
-    @DisplayName("periodo invertido devolve 409 com a mensagem do service")
+    @DisplayName("periodo invertido devolve 400 com a mensagem do service")
     void periodoInvertido() throws Exception {
         when(service.historico(any(), any(), any(), any()))
-                .thenThrow(new RegraNegocioException("A data inicial nao pode ser posterior a data final."));
+                .thenThrow(new DadosInvalidosException("A data inicial nao pode ser posterior a data final."));
 
         mvc.perform(get("/api/movimentacoes").param("de", "2026-03-01").param("ate", "2026-02-01"))
-                .andExpect(status().isConflict());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.detail").value("A data inicial nao pode ser posterior a data final."));
+    }
+
+    @Test
+    @DisplayName("GET /{id} devolve a movimentacao apontada pelo Location")
+    void buscaPorId() throws Exception {
+        when(service.buscarPorId(10L)).thenReturn(resposta(TipoMovimentacao.ENTRADA, "125"));
+
+        mvc.perform(get("/api/movimentacoes/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.tipo").value("ENTRADA"));
+    }
+
+    @Test
+    @DisplayName("GET /{id} inexistente devolve 404")
+    void buscaPorIdInexistente() throws Exception {
+        when(service.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Movimentacao 99 nao encontrada."));
+
+        mvc.perform(get("/api/movimentacoes/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Movimentacao 99 nao encontrada."));
+    }
+
+    @Test
+    @DisplayName("erro inesperado devolve 500 em ProblemDetail sem expor detalhes internos")
+    void erroInesperado() throws Exception {
+        when(service.buscarPorId(10L)).thenThrow(new IllegalStateException("detalhe interno do servidor"));
+
+        mvc.perform(get("/api/movimentacoes/10"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.title").value("Erro interno"))
+                .andExpect(jsonPath("$.detail").value(
+                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("detalhe interno"))));
+    }
+
+    @Test
+    @DisplayName("metodo HTTP nao suportado devolve 405")
+    void metodoNaoSuportado() throws Exception {
+        mvc.perform(put("/api/movimentacoes/10").with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(CORPO_VALIDO))
+                .andExpect(status().isMethodNotAllowed());
     }
 }

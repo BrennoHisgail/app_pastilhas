@@ -71,12 +71,14 @@ public class UsuarioService {
     }
 
     // Inativa o usuario em vez de apagar, porque existem movimentacoes
-    // no banco que apontam para ele
+    // no banco que apontam para ele.
+    // Inativar de novo um usuario ja inativo nao e erro: o DELETE do HTTP
+    // e idempotente, repetir o pedido deixa o recurso no mesmo estado.
     @Transactional
     public void inativar(Long id) {
         Usuario usuario = obrigatorio(id);
         if (!usuario.isAtivo()) {
-            throw new RegraNegocioException("O usuario " + usuario.getEmail() + " ja esta inativo.");
+            return;
         }
         if (id.equals(usuarioAutenticadoId())) {
             throw new RegraNegocioException("Voce nao pode inativar o proprio usuario.");

@@ -16,6 +16,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,6 +49,13 @@ public class MovimentacaoController {
     public ResponseEntity<MovimentacaoResponse> saida(@RequestBody @Valid MovimentacaoRequest dados) {
         MovimentacaoResponse criada = service.registrarSaida(dados);
         return ResponseEntity.created(URI.create("/api/movimentacoes/" + criada.id())).body(criada);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Busca uma movimentacao pelo id",
+            description = "E o endereco devolvido no cabecalho Location ao registrar entrada ou saida.")
+    public MovimentacaoResponse buscarPorId(@PathVariable Long id) {
+        return service.buscarPorId(id);
     }
 
     @GetMapping

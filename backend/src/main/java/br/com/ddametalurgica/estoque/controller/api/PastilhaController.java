@@ -6,6 +6,10 @@ import br.com.ddametalurgica.estoque.dto.PastilhaResponse;
 import br.com.ddametalurgica.estoque.service.PastilhaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -65,6 +69,10 @@ public class PastilhaController {
     }
 
     @PostMapping
+    @ApiResponse(responseCode = "201", description = "Pastilha criada",
+            headers = @Header(name = "Location", description = "Endereço do registro criado"),
+            content = @Content(schema = @Schema(implementation = PastilhaResponse.class)))
+    @ApiResponse(responseCode = "409", description = "Já existe uma pastilha com o código informado", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/ProblemDetail")))
     @Operation(summary = "Cadastra uma pastilha nova",
             description = "O saldo não é informado no cadastro: ele entra por uma movimentação de entrada.")
     public ResponseEntity<PastilhaResponse> criar(@RequestBody @Valid PastilhaRequest dados) {
@@ -73,6 +81,9 @@ public class PastilhaController {
     }
 
     @PutMapping("/{id}")
+    @ApiResponse(responseCode = "200", description = "Pastilha alterada",
+            content = @Content(schema = @Schema(implementation = PastilhaResponse.class)))
+    @ApiResponse(responseCode = "409", description = "Código já usado por outra pastilha, ou alteração simultânea", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/ProblemDetail")))
     @Operation(summary = "Altera os dados de uma pastilha")
     public PastilhaResponse atualizar(@PathVariable Long id, @RequestBody @Valid PastilhaRequest dados) {
         return service.atualizar(id, dados);
@@ -85,6 +96,7 @@ public class PastilhaController {
     }
 
     @DeleteMapping("/{id}")
+    @ApiResponse(responseCode = "204", description = "Pastilha inativada (repetir o pedido também devolve 204)")
     @Operation(summary = "Inativa a pastilha",
             description = "Não apaga do banco, só marca como inativa para não perder o histórico.")
     public ResponseEntity<Void> inativar(@PathVariable Long id) {

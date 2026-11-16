@@ -7,6 +7,10 @@ import br.com.ddametalurgica.estoque.dto.UsuarioUpdateRequest;
 import br.com.ddametalurgica.estoque.service.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -56,6 +60,10 @@ public class UsuarioController {
     }
 
     @PostMapping
+    @ApiResponse(responseCode = "201", description = "Usuário criado",
+            headers = @Header(name = "Location", description = "Endereço do registro criado"),
+            content = @Content(schema = @Schema(implementation = UsuarioResponse.class)))
+    @ApiResponse(responseCode = "409", description = "Já existe um usuário com o e-mail informado", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/ProblemDetail")))
     @Operation(summary = "Cadastra um usuário novo")
     public ResponseEntity<UsuarioResponse> criar(@RequestBody @Valid UsuarioCreateRequest dados) {
         UsuarioResponse criado = service.criar(dados);
@@ -69,6 +77,7 @@ public class UsuarioController {
     }
 
     @PatchMapping("/{id}/senha")
+    @ApiResponse(responseCode = "204", description = "Senha alterada")
     @Operation(summary = "Redefine a senha de um usuário")
     public ResponseEntity<Void> alterarSenha(@PathVariable Long id, @RequestBody @Valid AlterarSenhaRequest dados) {
         service.alterarSenha(id, dados);
@@ -76,6 +85,8 @@ public class UsuarioController {
     }
 
     @DeleteMapping("/{id}")
+    @ApiResponse(responseCode = "204", description = "Usuário inativado (repetir o pedido também devolve 204)")
+    @ApiResponse(responseCode = "409", description = "Inativar o próprio usuário ou o último administrador ativo", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/ProblemDetail")))
     @Operation(summary = "Inativa o usuário",
             description = "Não apaga do banco, só marca como inativo para não perder o histórico.")
     public ResponseEntity<Void> inativar(@PathVariable Long id) {

@@ -3,6 +3,9 @@ package br.com.ddametalurgica.estoque.controller.api;
 import br.com.ddametalurgica.estoque.service.RelatorioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -31,12 +34,16 @@ public class RelatorioController {
     }
 
     @GetMapping("/estoque.csv")
+    @ApiResponse(responseCode = "200", description = "Arquivo CSV (separador ;)",
+            content = @Content(mediaType = "text/csv", schema = @Schema(type = "string", format = "binary")))
     @Operation(summary = "Posição do estoque em CSV", description = "Todas as pastilhas ativas com saldo e valor.")
     public ResponseEntity<byte[]> estoque() {
         return arquivo("estoque-" + LocalDate.now() + ".csv", service.estoque());
     }
 
     @GetMapping("/movimentacoes.csv")
+    @ApiResponse(responseCode = "200", description = "Arquivo CSV (separador ;)",
+            content = @Content(mediaType = "text/csv", schema = @Schema(type = "string", format = "binary")))
     @Operation(summary = "Movimentações em CSV", description = "Mesmos filtros do histórico, sem paginação.")
     public ResponseEntity<byte[]> movimentacoes(
             @Parameter(description = "Filtra por pastilha; ausente traz todas") @RequestParam(required = false) Long pastilhaId,

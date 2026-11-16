@@ -5,6 +5,10 @@ import br.com.ddametalurgica.estoque.dto.MovimentacaoResponse;
 import br.com.ddametalurgica.estoque.service.MovimentacaoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -36,6 +40,11 @@ public class MovimentacaoController {
     }
 
     @PostMapping("/entrada")
+    @ApiResponse(responseCode = "201", description = "Entrada registrada",
+            headers = @Header(name = "Location", description = "Endereço do registro criado"),
+            content = @Content(schema = @Schema(implementation = MovimentacaoResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Pastilha não encontrada", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/ProblemDetail")))
+    @ApiResponse(responseCode = "422", description = "Pastilha inativa", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/ProblemDetail")))
     @Operation(summary = "Registra uma entrada",
             description = "Soma a quantidade no saldo da pastilha.")
     public ResponseEntity<MovimentacaoResponse> entrada(@RequestBody @Valid MovimentacaoRequest dados) {
@@ -44,6 +53,11 @@ public class MovimentacaoController {
     }
 
     @PostMapping("/saida")
+    @ApiResponse(responseCode = "201", description = "Saída registrada",
+            headers = @Header(name = "Location", description = "Endereço do registro criado"),
+            content = @Content(schema = @Schema(implementation = MovimentacaoResponse.class)))
+    @ApiResponse(responseCode = "404", description = "Pastilha não encontrada", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/ProblemDetail")))
+    @ApiResponse(responseCode = "422", description = "Saldo insuficiente ou pastilha inativa", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/ProblemDetail")))
     @Operation(summary = "Registra uma saída",
             description = "Subtrai do saldo. Se não houver estoque suficiente, devolve erro.")
     public ResponseEntity<MovimentacaoResponse> saida(@RequestBody @Valid MovimentacaoRequest dados) {

@@ -1,5 +1,6 @@
 package br.com.ddametalurgica.estoque.service;
 
+import br.com.ddametalurgica.estoque.domain.ClasseAbc;
 import br.com.ddametalurgica.estoque.domain.Pastilha;
 import br.com.ddametalurgica.estoque.domain.TipoMovimentacao;
 import br.com.ddametalurgica.estoque.dto.IndicadorPastilhaResponse;
@@ -12,6 +13,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,8 +34,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class IndicadorService {
 
     private static final BigDecimal CEM = new BigDecimal("100");
-    private static final BigDecimal LIMITE_A = new BigDecimal("80");
-    private static final BigDecimal LIMITE_B = new BigDecimal("95");
 
     private final PastilhaRepository pastilhaRepository;
     private final MovimentacaoRepository movimentacaoRepository;
@@ -76,34 +76,16 @@ public class IndicadorService {
 
         List<IndicadorPastilhaResponse> itens = new ArrayList<>();
         BigDecimal acumulado = BigDecimal.ZERO;
-        long a = 0;
-        long b = 0;
-        long c = 0;
+        Map<ClasseAbc, Long> porClasse = new EnumMap<>(ClasseAbc.class);
         long abaixoDoPp = 0;
 
         for (Linha l : linhas) {
-            // A classe usa o percentual acumulado ANTES do item, assim
-            // o item que mais consome sempre fica na classe A
             BigDecimal antes = percentual(acumulado, totalConsumido);
             acumulado = acumulado.add(l.valorConsumido);
             BigDecimal depois = percentual(acumulado, totalConsumido);
 
-            String classe;
-            if (l.valorConsumido.signum() == 0) {
-                classe = "C";
-            } else if (antes.compareTo(LIMITE_A) < 0) {
-                classe = "A";
-            } else if (antes.compareTo(LIMITE_B) < 0) {
-                classe = "B";
-            } else {
-                classe = "C";
-            }
-
-            switch (classe) {
-                case "A" -> a++;
-                case "B" -> b++;
-                default -> c++;
-            }
+            ClasseAbc classe = ClasseAbc.classificar(antes, l.valorConsumido);
+            porClasse.merge(classe, 1L, Long::sum);
             if (l.abaixoDoPontoDePedido()) {
                 abaixoDoPp++;
             }
@@ -111,7 +93,11 @@ public class IndicadorService {
             itens.add(l.paraResposta(depois, classe));
         }
 
-        return new IndicadoresEstoqueResponse(dias, a, b, c, abaixoDoPp, itens);
+        return new IndicadoresEstoqueResponse(dias,
+                porClasse.getOrDefault(ClasseAbc.A, 0L),
+                porClasse.getOrDefault(ClasseAbc.B, 0L),
+                porClasse.getOrDefault(ClasseAbc.C, 0L),
+                abaixoDoPp, itens);
     }
 
     private static BigDecimal percentual(BigDecimal parte, BigDecimal total) {
@@ -165,7 +151,7 @@ public class IndicadorService {
             return consumo.signum() > 0 && pastilha.getSaldoAtual().compareTo(pontoDePedido) <= 0;
         }
 
-        IndicadorPastilhaResponse paraResposta(BigDecimal percentualAcumulado, String classe) {
+        IndicadorPastilhaResponse paraResposta(BigDecimal percentualAcumulado, ClasseAbc classe) {
             return new IndicadorPastilhaResponse(
                     pastilha.getId(),
                     pastilha.getCodigo(),

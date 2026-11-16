@@ -276,7 +276,7 @@ class MovimentacaoServiceTest {
         void encontra() {
             Pastilha pastilha = Fabrica.comId(Fabrica.pastilha("A1"), 1L);
             Movimentacao movimentacao = new Movimentacao(
-                    pastilha, TipoMovimentacao.ENTRADA, BigDecimal.TEN, null, null, null);
+                    pastilha, TipoMovimentacao.ENTRADA, BigDecimal.TEN, null, null, null, null);
             when(repository.findComDetalhesById(5L)).thenReturn(Optional.of(movimentacao));
 
             assertThat(service.buscarPorId(5L).pastilhaCodigo()).isEqualTo("A1");

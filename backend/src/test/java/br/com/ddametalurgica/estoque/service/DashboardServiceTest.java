@@ -44,7 +44,7 @@ class DashboardServiceTest {
         Pastilha emFalta = Fabrica.comId(
                 Fabrica.pastilha("A1", new BigDecimal("5"), new BigDecimal("20")), 1L);
         Movimentacao recente = new Movimentacao(
-                emFalta, TipoMovimentacao.SAIDA, new BigDecimal("3"), "OP 10", "Usinagem", null);
+                emFalta, TipoMovimentacao.SAIDA, new BigDecimal("3"), "OP 10", "Usinagem", null, null);
 
         when(pastilhaRepository.buscarResumo())
                 .thenReturn(new ResumoPastilhas(12L, 5L, 4L, new BigDecimal("1234.56")));

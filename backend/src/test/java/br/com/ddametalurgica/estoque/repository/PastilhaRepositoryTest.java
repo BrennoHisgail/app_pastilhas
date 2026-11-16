@@ -137,15 +137,6 @@ class PastilhaRepositoryTest {
     }
 
     @Test
-    @DisplayName("findByCodigoIgnoreCase acha a pastilha pelo codigo")
-    void achaPeloCodigo() {
-        assertThat(repository.findByCodigoIgnoreCase("CnMg120408"))
-                .get()
-                .extracting(Pastilha::getDescricao)
-                .isEqualTo("Pastilha de torneamento metal duro");
-    }
-
-    @Test
     @DisplayName("as categorias vem sem repetir, em ordem, e sem as inativas")
     void listaCategorias() {
         List<String> categorias = repository.listarCategorias();
@@ -154,27 +145,28 @@ class PastilhaRepositoryTest {
     }
 
     @Test
-    @DisplayName("os contadores do painel ignoram as pastilhas inativas")
-    void contadores() {
-        assertThat(repository.contarAtivas()).isEqualTo(3);
-        assertThat(repository.contarCategorias()).isEqualTo(2);
-        assertThat(repository.contarAbaixoDoMinimo()).isEqualTo(2);
-    }
+    @DisplayName("o resumo do painel ignora as pastilhas inativas")
+    void resumoDoPainel() {
+        ResumoPastilhas resumo = repository.buscarResumo();
 
-    @Test
-    @DisplayName("o valor em estoque soma saldo vezes custo das ativas")
-    void somaValorEmEstoque() {
+        assertThat(resumo.ativas()).isEqualTo(3);
+        assertThat(resumo.categorias()).isEqualTo(2);
+        assertThat(resumo.abaixoDoMinimo()).isEqualTo(2);
         // 100x10 + 5x2 + 30x1 = 1040; a inativa (999x50) fica de fora
-        assertThat(repository.somarValorEmEstoque()).isEqualByComparingTo("1040");
+        assertThat(resumo.valorEmEstoque()).isEqualByComparingTo("1040");
     }
 
     @Test
-    @DisplayName("com o banco vazio o valor em estoque e zero, nao nulo")
-    void valorEmEstoqueComBancoVazio() {
+    @DisplayName("com o banco vazio o resumo vem zerado, nao nulo")
+    void resumoComBancoVazio() {
         repository.deleteAll();
         em.flush();
 
-        assertThat(repository.somarValorEmEstoque()).isEqualByComparingTo("0");
+        ResumoPastilhas resumo = repository.buscarResumo();
+
+        assertThat(resumo.ativas()).isZero();
+        assertThat(resumo.abaixoDoMinimo()).isZero();
+        assertThat(resumo.valorEmEstoque()).isEqualByComparingTo("0");
     }
 
     @Test
@@ -197,7 +189,9 @@ class PastilhaRepositoryTest {
     @Test
     @DisplayName("buscarParaMovimentar traz a pastilha travada para atualizacao")
     void buscaParaMovimentar() {
-        Long id = repository.findByCodigoIgnoreCase("CNMG120408").orElseThrow().getId();
+        Long id = repository.findAll().stream()
+                .filter(p -> p.getCodigo().equals("CNMG120408"))
+                .findFirst().orElseThrow().getId();
 
         assertThat(repository.buscarParaMovimentar(id))
                 .get()

@@ -15,11 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// Controller que alimenta o painel inicial do sistema
+// Endpoints do painel inicial e dos alertas de reposicao
 @RestController
 @RequestMapping("/api")
 @Validated
-@Tag(name = "Indicadores", description = "Numeros do painel inicial")
+@Tag(name = "Indicadores", description = "Números do painel inicial")
 public class DashboardController {
 
     private final DashboardService service;
@@ -29,20 +29,20 @@ public class DashboardController {
     }
 
     @GetMapping("/dashboard/indicadores")
-    @Operation(summary = "Numeros do painel",
-            description = "Itens cadastrados, itens em falta, valor em estoque e ultimas movimentacoes.")
+    @Operation(summary = "Números do painel",
+            description = "Itens cadastrados, itens em falta, valor em estoque e últimas movimentações.")
     public IndicadoresResponse indicadores() {
         return service.indicadores();
     }
 
     @GetMapping("/alertas/reposicao")
-    @Operation(summary = "Itens que precisam de reposicao",
-            description = "Pastilhas que chegaram no nivel minimo, as mais criticas primeiro.")
+    @Operation(summary = "Itens que precisam de reposição",
+            description = "Pastilhas que chegaram no nível mínimo, as mais críticas primeiro.")
     public List<PastilhaResponse> alertas(
             @Parameter(description = "Quantos itens trazer, de 1 a 200")
             @RequestParam(defaultValue = "50")
-            @Min(value = 1, message = "O limite deve ser no minimo 1")
-            @Max(value = 200, message = "O limite deve ser no maximo 200") int limite) {
+            @Min(value = 1, message = "O limite deve ser no mínimo 1")
+            @Max(value = 200, message = "O limite deve ser no máximo 200") int limite) {
         return service.alertasReposicao(limite);
     }
 }

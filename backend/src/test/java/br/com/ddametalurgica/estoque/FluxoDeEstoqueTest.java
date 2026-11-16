@@ -29,12 +29,10 @@ import org.springframework.security.test.context.support.TestExecutionEvent;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MockMvc;
 
-/**
- * Teste de ponta a ponta: sobe a aplicacao inteira e faz as chamadas
- * HTTP de verdade, passando por controller, service, repositorio e banco.
- *
- * E o teste que confere se o saldo fecha no final.
- */
+// Teste de ponta a ponta: sobe a aplicacao inteira e faz as chamadas
+// HTTP de verdade, passando por controller, service, repositorio e banco.
+//
+// E o teste que confere se o saldo fecha no final.
 @SpringBootTest
 @AutoConfigureMockMvc
 @DisplayName("Fluxo completo - do cadastro ao painel")
@@ -69,7 +67,7 @@ class FluxoDeEstoqueTest {
         }
     }
 
-    /** Cadastra uma pastilha pela API e devolve o id que o banco gerou. */
+    // Cadastra uma pastilha pela API e devolve o id que o banco gerou.
     private long cadastrar(String codigo) throws Exception {
         String corpo = mvc.perform(post("/api/pastilhas").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -88,7 +86,7 @@ class FluxoDeEstoqueTest {
     }
 
     @Test
-    @DisplayName("cadastro, entradas e saidas fecham o saldo e alimentam o historico")
+    @DisplayName("cadastro, entradas e saídas fecham o saldo e alimentam o histórico")
     void fluxoCompleto() throws Exception {
         long id = cadastrar("CNMG120408");
 
@@ -111,7 +109,7 @@ class FluxoDeEstoqueTest {
         mvc.perform(get("/api/movimentacoes").param("pastilhaId", String.valueOf(id)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(3))
-                .andExpect(jsonPath("$.content[0].usuarioNome").value("Usuario de teste"))
+                .andExpect(jsonPath("$.content[0].usuarioNome").value("Usuário de teste"))
                 .andExpect(jsonPath("$.content[0].tipo").value("SAIDA"))
                 .andExpect(jsonPath("$.content[0].saldoApos").value(120))
                 .andExpect(jsonPath("$.content[1].saldoApos").value(150))
@@ -119,7 +117,7 @@ class FluxoDeEstoqueTest {
     }
 
     @Test
-    @DisplayName("a saida maior que o saldo e recusada e o estoque nao muda")
+    @DisplayName("a saída maior que o saldo e recusada e o estoque não muda")
     void saidaAcimaDoSaldoNaoAlteraEstoque() throws Exception {
         long id = cadastrar("WNMG080408");
         movimentar("entrada", id, "10", 201);
@@ -132,7 +130,7 @@ class FluxoDeEstoqueTest {
     }
 
     @Test
-    @DisplayName("pastilha inativada nao aceita mais movimentacao")
+    @DisplayName("pastilha inativada não aceita mais movimentação")
     void pastilhaInativaNaoMovimenta() throws Exception {
         long id = cadastrar("APKT1604");
         movimentar("entrada", id, "10", 201);
@@ -171,7 +169,7 @@ class FluxoDeEstoqueTest {
     }
 
     @Test
-    @DisplayName("a lista de reposicao traz so quem chegou no nivel minimo")
+    @DisplayName("a lista de reposição traz só quem chegou no nível mínimo")
     void alertasDeReposicao() throws Exception {
         long comEstoque = cadastrar("CNMG120408");
         cadastrar("WNMG080408");
@@ -184,7 +182,7 @@ class FluxoDeEstoqueTest {
     }
 
     @Test
-    @DisplayName("codigo repetido e barrado pela API")
+    @DisplayName("código repetido e barrado pela API")
     void codigoRepetido() throws Exception {
         cadastrar("CNMG120408");
 
@@ -214,7 +212,7 @@ class FluxoDeEstoqueTest {
     }
 
     @Test
-    @DisplayName("inativar tira da lista de ativas e reativar traz de volta, sem perder o historico")
+    @DisplayName("inativar tira da lista de ativas e reativar traz de volta, sem perder o histórico")
     void inativarEReativar() throws Exception {
         long id = cadastrar("CNMG120408");
         movimentar("entrada", id, "40", 201);
@@ -259,7 +257,7 @@ class FluxoDeEstoqueTest {
     }
 
     @Test
-    @DisplayName("indicadores e CSV saem das movimentacoes registradas")
+    @DisplayName("indicadores e CSV saem das movimentações registradas")
     void indicadoresERelatorio() throws Exception {
         long id = cadastrar("CNMG120408");
         movimentar("entrada", id, "100", 201);
@@ -284,6 +282,6 @@ class FluxoDeEstoqueTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertThat(movimentacoes.split("\r\n")).hasSize(3);
-        assertThat(movimentacoes).contains("SAIDA;30;70").contains("Usuario de teste");
+        assertThat(movimentacoes).contains("SAIDA;30;70").contains("Usuário de teste");
     }
 }

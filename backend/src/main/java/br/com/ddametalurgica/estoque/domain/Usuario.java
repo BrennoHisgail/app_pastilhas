@@ -12,10 +12,9 @@ import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
-// Entidade do usuario que entra no sistema.
-//
-// Repare que senhaHash nao tem set: a senha so muda pelo metodo
-// definirSenha, que recebe o hash pronto do UsuarioService.
+// Usuario com acesso ao sistema.
+// Nao ha setter de senhaHash: a senha so muda por definirSenha, que recebe
+// o hash BCrypt ja calculado pelo UsuarioService.
 @Entity
 @Table(name = "usuario")
 public class Usuario {
@@ -56,13 +55,12 @@ public class Usuario {
         this.atualizadoEm = LocalDateTime.now();
     }
 
-    // Recebe a senha ja criptografada, nunca o texto puro
+    // Recebe o hash, nunca a senha em texto puro
     public void definirSenha(String senhaCriptografada) {
         this.senhaHash = senhaCriptografada;
     }
 
-    // Nao apagamos o usuario do banco, so marcamos como inativo,
-    // senao as movimentacoes antigas dele ficariam sem referencia
+    // Exclusao logica: preserva a referencia nas movimentacoes lancadas pelo usuario
     public void inativar() {
         this.ativo = false;
     }

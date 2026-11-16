@@ -28,7 +28,7 @@ class PastilhaTest {
         }
 
         @Test
-        @DisplayName("saida subtrai do saldo atual")
+        @DisplayName("saída subtrai do saldo atual")
         void saidaSubtrai() {
             Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("10"), BigDecimal.ZERO);
 
@@ -53,7 +53,7 @@ class PastilhaTest {
         }
 
         @Test
-        @DisplayName("temSaldoPara compara o valor, nao a quantidade de casas decimais")
+        @DisplayName("temSaldoPara compara o valor, não a quantidade de casas decimais")
         void temSaldoParaComparaValorNaoEscala() {
             Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("10"), BigDecimal.ZERO);
 
@@ -61,7 +61,7 @@ class PastilhaTest {
         }
 
         @Test
-        @DisplayName("saida maior que o saldo e recusada pela propria pastilha e o saldo nao muda")
+        @DisplayName("saída maior que o saldo e recusada pela propria pastilha e o saldo não muda")
         void saidaSemSaldoERecusada() {
             Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("10"), BigDecimal.ZERO);
 
@@ -72,7 +72,7 @@ class PastilhaTest {
         }
 
         @Test
-        @DisplayName("pastilha inativa recusa entrada e saida")
+        @DisplayName("pastilha inativa recusa entrada e saída")
         void inativaNaoMovimenta() {
             Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("10"), BigDecimal.ZERO);
             pastilha.inativar();
@@ -97,11 +97,11 @@ class PastilhaTest {
     }
 
     @Nested
-    @DisplayName("nivel minimo")
+    @DisplayName("nível mínimo")
     class NivelMinimo {
 
         @Test
-        @DisplayName("entra na lista de reposicao quando o saldo chega no nivel minimo")
+        @DisplayName("entra na lista de reposição quando o saldo chega no nível mínimo")
         void abaixoQuandoIgual() {
             Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("20"), new BigDecimal("20"));
 
@@ -109,7 +109,7 @@ class PastilhaTest {
         }
 
         @Test
-        @DisplayName("fica fora da lista quando o saldo e maior que o nivel minimo")
+        @DisplayName("fica fora da lista quando o saldo e maior que o nível mínimo")
         void acimaDoMinimo() {
             Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("21"), new BigDecimal("20"));
 
@@ -118,7 +118,7 @@ class PastilhaTest {
     }
 
     @Test
-    @DisplayName("valor em estoque e o saldo vezes o custo unitario")
+    @DisplayName("valor em estoque e o saldo vezes o custo unitário")
     void valorEmEstoque() {
         Pastilha pastilha = Fabrica.pastilha("A1", new BigDecimal("3"), BigDecimal.ZERO);
         pastilha.setCustoUnitario(new BigDecimal("12.50"));
@@ -127,7 +127,7 @@ class PastilhaTest {
     }
 
     @Test
-    @DisplayName("inativar e reativar mudam so a flag, o saldo continua igual")
+    @DisplayName("inativar e reativar mudam só a flag, o saldo continua igual")
     void inativarEReativar() {
         Pastilha pastilha = Fabrica.pastilha("A1");
         assertThat(pastilha.isAtivo()).isTrue();

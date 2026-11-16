@@ -3,7 +3,7 @@ package br.com.ddametalurgica.estoque.controller.web;
 import br.com.ddametalurgica.estoque.domain.PerfilUsuario;
 import br.com.ddametalurgica.estoque.domain.Usuario;
 
-// Dados do usuario logado que aparecem no menu de cima
+// Dados do usuario logado exibidos no cabecalho
 public record UsuarioSessaoView(String nome, String iniciais, boolean admin) {
 
     public static UsuarioSessaoView de(Usuario usuario) {

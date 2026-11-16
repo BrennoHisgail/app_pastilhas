@@ -18,8 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Classe com as regras da gestao de usuarios.
-// O controller nao acessa o repositorio direto, passa sempre por aqui.
+// Regras da gestao de usuarios
 @Service
 public class UsuarioService {
 
@@ -45,7 +44,7 @@ public class UsuarioService {
     public UsuarioResponse criar(UsuarioCreateRequest dados) {
         String email = dados.email().trim();
         if (repository.existsByEmailIgnoreCase(email)) {
-            throw new RegraNegocioException("Ja existe um usuario com o email " + email + ".");
+            throw new RegraNegocioException("Já existe um usuário com o e-mail " + email + ".");
         }
         Usuario usuario = new Usuario();
         usuario.setNome(dados.nome().trim());
@@ -70,10 +69,8 @@ public class UsuarioService {
         repository.save(usuario);
     }
 
-    // Inativa o usuario em vez de apagar, porque existem movimentacoes
-    // no banco que apontam para ele.
-    // Inativar de novo um usuario ja inativo nao e erro: o DELETE do HTTP
-    // e idempotente, repetir o pedido deixa o recurso no mesmo estado.
+    // Exclusao logica, para preservar as movimentacoes do usuario.
+    // Idempotente como o DELETE do HTTP: inativar de novo nao gera erro.
     @Transactional
     public void inativar(Long id) {
         Usuario usuario = obrigatorio(id);
@@ -81,10 +78,10 @@ public class UsuarioService {
             return;
         }
         if (id.equals(usuarioAutenticadoId())) {
-            throw new RegraNegocioException("Voce nao pode inativar o proprio usuario.");
+            throw new RegraNegocioException("Você não pode inativar o próprio usuário.");
         }
         if (usuario.getPerfil() == PerfilUsuario.ADMIN && repository.countByPerfilAndAtivoTrue(PerfilUsuario.ADMIN) <= 1) {
-            throw new RegraNegocioException("Nao e possivel inativar o ultimo administrador ativo.");
+            throw new RegraNegocioException("Não é possível inativar o último administrador ativo.");
         }
         usuario.inativar();
         repository.save(usuario);
@@ -97,13 +94,13 @@ public class UsuarioService {
         return UsuarioResponse.de(repository.save(usuario));
     }
 
-    // Busca o usuario e ja dispara o erro 404 se nao existir
+    // Busca por id ou lanca RecursoNaoEncontradoException (404)
     private Usuario obrigatorio(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuario " + id + " nao encontrado."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário " + id + " não encontrado."));
     }
 
-    // Id de quem esta logado, ou null se ninguem estiver
+    // Id do usuario autenticado, ou null fora de uma requisicao autenticada
     private Long usuarioAutenticadoId() {
         Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
         if (autenticacao == null || !(autenticacao.getPrincipal() instanceof UsuarioDetails detalhes)) {

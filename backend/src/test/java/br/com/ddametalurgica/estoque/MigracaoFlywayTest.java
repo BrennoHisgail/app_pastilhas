@@ -10,14 +10,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.TestPropertySource;
 
-/**
- * Sobe a aplicacao do jeito que ela sobe em producao: quem cria as
- * tabelas e o Flyway, e o Hibernate so confere se as entidades batem
- * com o banco (ddl-auto: validate).
- *
- * Se alguem mexer numa entidade e esquecer de escrever a migration,
- * este teste quebra aqui, e nao na hora de publicar.
- */
+// Sobe a aplicacao do jeito que ela sobe em producao: quem cria as
+// tabelas e o Flyway, e o Hibernate so confere se as entidades batem
+// com o banco (ddl-auto: validate).
+//
+// Se alguem mexer numa entidade e esquecer de escrever a migration,
+// este teste quebra aqui, e nao na hora de publicar.
 @SpringBootTest
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
@@ -31,7 +29,7 @@ class MigracaoFlywayTest {
     private DataSource dataSource;
 
     @Test
-    @DisplayName("as migrations criam um banco que bate com as entidades e ja traz a massa de exemplo")
+    @DisplayName("as migrations criam um banco que bate com as entidades e já traz a massa de exemplo")
     void migrationsBatemComAsEntidades() {
         JdbcTemplate jdbc = new JdbcTemplate(dataSource);
 

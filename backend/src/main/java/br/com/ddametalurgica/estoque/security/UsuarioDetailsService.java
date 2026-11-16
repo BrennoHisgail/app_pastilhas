@@ -6,7 +6,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-// Usado pelo Spring Security para buscar o usuario pelo email na hora do login
+// Carrega o usuario pelo e-mail durante a autenticacao
 @Service
 public class UsuarioDetailsService implements UserDetailsService {
 
@@ -20,6 +20,6 @@ public class UsuarioDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         return repository.findByEmailIgnoreCase(email)
                 .map(UsuarioDetails::new)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado: " + email));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado: " + email));
     }
 }

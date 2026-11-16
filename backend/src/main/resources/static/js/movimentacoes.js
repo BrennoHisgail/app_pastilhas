@@ -27,7 +27,7 @@
         return pastilhas.filter((p) => String(p.id) === String(id))[0] || null;
     }
 
-    // Mostra no cartao da lateral o saldo da pastilha escolhida
+    // Cartao lateral com o saldo da pastilha selecionada
     function atualizarCartaoSaldo() {
         const p = pastilhaSelecionada();
         const situacao = document.getElementById('saldoSituacao');
@@ -78,7 +78,7 @@
 
     async function carregarPastilhas() {
         try {
-            // size grande para trazer todas as pastilhas de uma vez no combo
+            // Tamanho de pagina alto para carregar todas as pastilhas no select
             const pg = await Api.get('/api/pastilhas?size=200&sort=codigo');
             pastilhas = pg.content || [];
 
@@ -163,7 +163,7 @@
             document.getElementById('origemDestino').value = '';
             document.getElementById('observacao').value = '';
 
-            // Busca de novo para o cartao mostrar o saldo ja atualizado
+            // Recarrega para exibir o saldo atualizado
             await carregarPastilhas();
             seletor.value = String(p.id);
             atualizarCartaoSaldo();

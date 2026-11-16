@@ -9,7 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-@DisplayName("Movimentacao - fotografia do saldo no momento do lancamento")
+@DisplayName("Movimentação - fotografia do saldo no momento do lançamento")
 class MovimentacaoTest {
 
     @Test
@@ -30,7 +30,7 @@ class MovimentacaoTest {
     }
 
     @Test
-    @DisplayName("data e hora sao preenchidas na gravacao quando vem vazias")
+    @DisplayName("data e hora são preenchidas na gravacao quando vem vazias")
     void preencheDataHoraNaGravacao() {
         Movimentacao movimentacao = new Movimentacao(
                 Fabrica.pastilha("A1"), TipoMovimentacao.SAIDA, BigDecimal.ONE, null, null, null, null);
@@ -43,7 +43,7 @@ class MovimentacaoTest {
     }
 
     @Test
-    @DisplayName("data e hora ja informada nao e sobrescrita na gravacao")
+    @DisplayName("data e hora já informada não é sobrescrita na gravacao")
     void naoSobrescreveDataHora() {
         LocalDateTime ontem = LocalDateTime.now().minusDays(1);
         Movimentacao movimentacao = new Movimentacao(

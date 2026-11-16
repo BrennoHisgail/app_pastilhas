@@ -5,11 +5,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.ui.Model;
 
-// Controller das telas. Ele so devolve o nome do arquivo HTML
-// que o Thymeleaf tem que abrir.
-//
-// Os dados nao vem por aqui: cada tela busca o que precisa
-// chamando a API com JavaScript.
+// Rotas das telas: devolve apenas o template Thymeleaf.
+// Os dados sao carregados pelo JavaScript de cada tela, via API REST.
 @Controller
 public class PaginaController {
 

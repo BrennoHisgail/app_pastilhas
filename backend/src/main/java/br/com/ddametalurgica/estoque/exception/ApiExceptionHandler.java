@@ -23,17 +23,14 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-// Concentra o tratamento de erro da API num lugar so.
-// Quando um service lanca uma excecao, o Spring cai aqui e
-// devolve a mensagem para a tela com o status HTTP certo.
+// Tratamento centralizado de erros da API: converte excecoes em respostas
+// ProblemDetail (RFC 7807) com o status HTTP correspondente.
 //
-// Estende o ResponseEntityExceptionHandler do Spring, que ja converte os
-// erros do proprio framework (metodo nao suportado, Content-Type errado,
-// parametro obrigatorio faltando...) para o mesmo formato ProblemDetail.
+// Estende ResponseEntityExceptionHandler para cobrir tambem os erros do
+// proprio Spring MVC (parametro ausente, corpo ilegivel etc.).
 //
-// So vale para os controllers de /api. As telas do pacote controller.web
-// continuam caindo nas paginas de erro HTML (templates/error), senao o
-// navegador mostraria JSON no lugar da pagina.
+// Restrito ao pacote controller.api: as telas (controller.web) continuam
+// usando as paginas de erro HTML de templates/error.
 @RestControllerAdvice(basePackages = "br.com.ddametalurgica.estoque.controller.api")
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
@@ -42,29 +39,28 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     // 404: o id pedido nao existe
     @ExceptionHandler(RecursoNaoEncontradoException.class)
     public ProblemDetail naoEncontrado(RecursoNaoEncontradoException ex) {
-        return problema(HttpStatus.NOT_FOUND, "Recurso nao encontrado", ex.getMessage());
+        return problema(HttpStatus.NOT_FOUND, "Recurso não encontrado", ex.getMessage());
     }
 
     // 409: conflito com o estado atual (codigo duplicado, ultimo admin...)
     @ExceptionHandler(RegraNegocioException.class)
     public ProblemDetail regraNegocio(RegraNegocioException ex) {
-        return problema(HttpStatus.CONFLICT, "Regra de negocio violada", ex.getMessage());
+        return problema(HttpStatus.CONFLICT, "Regra de negócio violada", ex.getMessage());
     }
 
     // 422: pedido valido, mas o estoque nao permite (saldo insuficiente, pastilha inativa)
     @ExceptionHandler(OperacaoNaoPermitidaException.class)
     public ProblemDetail operacaoNaoPermitida(OperacaoNaoPermitidaException ex) {
-        return problema(HttpStatus.UNPROCESSABLE_ENTITY, "Operacao nao permitida", ex.getMessage());
+        return problema(HttpStatus.UNPROCESSABLE_ENTITY, "Operação não permitida", ex.getMessage());
     }
 
     // 400: dados que nao fazem sentido juntos (periodo invertido)
     @ExceptionHandler(DadosInvalidosException.class)
     public ProblemDetail dadosInvalidos(DadosInvalidosException ex) {
-        return problema(HttpStatus.BAD_REQUEST, "Dados invalidos", ex.getMessage());
+        return problema(HttpStatus.BAD_REQUEST, "Dados inválidos", ex.getMessage());
     }
 
-    // Erros das anotacoes de validacao (@NotNull, @Positive...)
-    // aplicadas no corpo da requisicao (@RequestBody @Valid)
+    // Bean Validation no corpo da requisicao (@RequestBody @Valid): devolve o erro de cada campo
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex,
                                                                   HttpHeaders headers,
@@ -73,9 +69,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, String> erros = new LinkedHashMap<>();
         for (FieldError campo : ex.getBindingResult().getFieldErrors()) {
             erros.putIfAbsent(campo.getField(),
-                    campo.getDefaultMessage() == null ? "valor invalido" : campo.getDefaultMessage());
+                    campo.getDefaultMessage() == null ? "valor inválido" : campo.getDefaultMessage());
         }
-        ProblemDetail detalhe = problema(HttpStatus.BAD_REQUEST, "Dados invalidos", "Verifique os campos informados.");
+        ProblemDetail detalhe = problema(HttpStatus.BAD_REQUEST, "Dados inválidos", "Verifique os campos informados.");
         detalhe.setProperty("erros", erros);
         return ResponseEntity.badRequest().body(detalhe);
     }
@@ -86,21 +82,21 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
                                                                   HttpHeaders headers,
                                                                   HttpStatusCode status,
                                                                   WebRequest request) {
-        return ResponseEntity.badRequest().body(problema(HttpStatus.BAD_REQUEST, "Dados invalidos",
-                "Nao foi possivel ler o corpo da requisicao. Confira o formato dos campos enviados."));
+        return ResponseEntity.badRequest().body(problema(HttpStatus.BAD_REQUEST, "Dados inválidos",
+                "Não foi possível ler o corpo da requisição. Confira o formato dos campos enviados."));
     }
 
-    // Validacao dos parametros de URL (@RequestParam @Min...)
+    // Bean Validation nos parametros de URL (@RequestParam @Min...)
     @ExceptionHandler(ConstraintViolationException.class)
     public ProblemDetail validacaoDeParametro(ConstraintViolationException ex) {
         Map<String, String> erros = new LinkedHashMap<>();
         for (ConstraintViolation<?> violacao : ex.getConstraintViolations()) {
             String caminho = violacao.getPropertyPath().toString();
-            // O caminho vem como "metodo.parametro"; para a tela so interessa o parametro
+            // O caminho vem como "metodo.parametro"; mantem so o nome do parametro
             String parametro = caminho.substring(caminho.lastIndexOf('.') + 1);
             erros.putIfAbsent(parametro, violacao.getMessage());
         }
-        ProblemDetail detalhe = problema(HttpStatus.BAD_REQUEST, "Dados invalidos", "Verifique os parametros informados.");
+        ProblemDetail detalhe = problema(HttpStatus.BAD_REQUEST, "Dados inválidos", "Verifique os parâmetros informados.");
         detalhe.setProperty("erros", erros);
         return detalhe;
     }
@@ -108,24 +104,23 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     // Parametro com o tipo errado, por exemplo /api/pastilhas/abc
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ProblemDetail tipoInvalido(MethodArgumentTypeMismatchException ex) {
-        return problema(HttpStatus.BAD_REQUEST, "Dados invalidos",
-                "O valor informado em '" + ex.getName() + "' nao e valido.");
+        return problema(HttpStatus.BAD_REQUEST, "Dados inválidos",
+                "O valor informado em '" + ex.getName() + "' não é válido.");
     }
 
     // Ordenacao pedindo um campo que a entidade nao tem, por exemplo ?sort=inexistente
     @ExceptionHandler(PropertyReferenceException.class)
     public ProblemDetail ordenacaoInvalida(PropertyReferenceException ex) {
-        return problema(HttpStatus.BAD_REQUEST, "Dados invalidos",
-                "Nao existe o campo '" + ex.getPropertyName() + "' para ordenar ou filtrar.");
+        return problema(HttpStatus.BAD_REQUEST, "Dados inválidos",
+                "Não existe o campo '" + ex.getPropertyName() + "' para ordenar ou filtrar.");
     }
 
-    // Ultima rede de protecao: as travas do banco (codigo duplicado, saldo negativo).
-    // O service ja barra esses casos antes, mas duas requisicoes simultaneas
-    // podem passar pela verificacao e so o banco pegar.
+    // Violacao de constraint do banco (codigo duplicado, saldo negativo). O service
+    // ja valida antes; isto cobre requisicoes simultaneas que passem juntas pela validacao.
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ProblemDetail integridade(DataIntegrityViolationException ex) {
-        return problema(HttpStatus.CONFLICT, "Operacao rejeitada pelo banco",
-                "A operacao nao pode ser concluida porque violaria uma regra do banco de dados. "
+        return problema(HttpStatus.CONFLICT, "Operação rejeitada pelo banco",
+                "A operação não pode ser concluída porque violaria uma regra do banco de dados. "
                         + "Recarregue a tela e tente de novo.");
     }
 
@@ -133,7 +128,7 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ProblemDetail conflitoDeVersao(ObjectOptimisticLockingFailureException ex) {
         return problema(HttpStatus.CONFLICT, "Registro desatualizado",
-                "Esta pastilha foi alterada por outra operacao ao mesmo tempo. "
+                "Esta pastilha foi alterada por outra operação ao mesmo tempo. "
                         + "Recarregue a tela e tente novamente.");
     }
 

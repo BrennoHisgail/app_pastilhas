@@ -6,28 +6,28 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
-// Dados que a tela envia para registrar uma entrada ou saida
-@Schema(description = "Dados de uma movimentacao de estoque")
+// Corpo da requisicao de entrada ou saida
+@Schema(description = "Dados de uma movimentação de estoque")
 public record MovimentacaoRequest(
 
         @Schema(example = "1")
-        @NotNull(message = "A pastilha e obrigatoria")
+        @NotNull(message = "A pastilha é obrigatória")
         Long pastilhaId,
 
         @Schema(example = "25")
-        @NotNull(message = "A quantidade e obrigatoria")
+        @NotNull(message = "A quantidade é obrigatória")
         @Positive(message = "A quantidade deve ser maior que zero")
         BigDecimal quantidade,
 
-        @Schema(description = "Nota fiscal, ordem de producao ou requisicao", example = "NF 12345")
-        @Size(max = 60, message = "O documento deve ter no maximo 60 caracteres")
+        @Schema(description = "Nota fiscal, ordem de produção ou requisição", example = "NF 12345")
+        @Size(max = 60, message = "O documento deve ter no máximo 60 caracteres")
         String documento,
 
-        @Schema(description = "Fornecedor na entrada, setor ou ordem na saida", example = "Fornecedor Sandvik")
-        @Size(max = 160, message = "A origem/destino deve ter no maximo 160 caracteres")
+        @Schema(description = "Fornecedor na entrada, setor ou ordem na saída", example = "Fornecedor Sandvik")
+        @Size(max = 160, message = "A origem/destino deve ter no máximo 160 caracteres")
         String origemDestino,
 
-        @Size(max = 400, message = "A observacao deve ter no maximo 400 caracteres")
+        @Size(max = 400, message = "A observação deve ter no máximo 400 caracteres")
         String observacao
 ) {
 }

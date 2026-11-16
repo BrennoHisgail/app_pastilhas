@@ -4,11 +4,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.math.BigDecimal;
 
-// Usado na tela que altera so o nivel minimo da pastilha
+// Corpo do PATCH que altera apenas o nivel minimo
 public record NivelMinimoRequest(
 
-        @NotNull(message = "O nivel minimo e obrigatorio")
-        @PositiveOrZero(message = "O nivel minimo nao pode ser negativo")
+        @NotNull(message = "O nível mínimo é obrigatório")
+        @PositiveOrZero(message = "O nível mínimo não pode ser negativo")
         BigDecimal nivelMinimo
 ) {
 }

@@ -75,7 +75,7 @@
                 </div>
             </form>
 
-            <!-- So aparece na edicao -->
+            <!-- Exibido apenas na edicao -->
             <form class="cartao oculto" id="formSenha" novalidate>
                 <div class="cartao__corpo" style="display: flex; flex-direction: column; gap: 18px;">
                     <div class="grupo-secao">
@@ -129,7 +129,7 @@
 <footer th:replace="~{fragments/layout :: rodape}"></footer>
 <div th:replace="~{fragments/layout :: toasts}"></div>
 
-<!-- Vem vazio no cadastro novo e com o id quando é edição -->
+<!-- Vazio no cadastro; preenchido com o id na edicao -->
 <script th:inline="javascript">
     window.USUARIO_ID = /*[[${usuarioId}]]*/ '';
 </script>

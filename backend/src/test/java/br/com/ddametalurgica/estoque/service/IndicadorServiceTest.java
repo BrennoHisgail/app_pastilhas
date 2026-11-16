@@ -66,7 +66,7 @@ class IndicadorServiceTest {
     }
 
     @Test
-    @DisplayName("consumo medio diario e Ponto de Pedido seguem PP = (d x t) + Qs")
+    @DisplayName("consumo médio diário e Ponto de Pedido seguem PP = (d x t) + Qs")
     void pontoDePedido() {
         // d = 60 / 30 = 2; PP = 2 x 7 + 5 = 19
         assertThat(item("A1").consumoMedioDiario()).isEqualByComparingTo("2");
@@ -80,14 +80,14 @@ class IndicadorServiceTest {
     }
 
     @Test
-    @DisplayName("cobertura e saldo / consumo diario, e fica vazia sem consumo")
+    @DisplayName("cobertura e saldo / consumo diário, e fica vazia sem consumo")
     void cobertura() {
         assertThat(item("A1").coberturaDias()).isEqualByComparingTo("50");
         assertThat(item("C3").coberturaDias()).isNull();
     }
 
     @Test
-    @DisplayName("giro e o consumo dividido pelo estoque medio do periodo")
+    @DisplayName("giro e o consumo dividido pelo estoque médio do período")
     void giro() {
         // saldo inicial = 100 - 30 + 60 = 130; estoque medio = (130 + 100) / 2 = 115
         // giro = 60 / 115 = 0,52

@@ -1,4 +1,4 @@
-/* Tela que lista as pastilhas cadastradas */
+/* Lista de pastilhas com busca, filtros e paginacao */
 
 (function () {
 
@@ -19,7 +19,7 @@
 
     let pagina = 0;
 
-    // So o ADMIN edita, inativa e reativa. O OPERADOR so consulta.
+    // Acoes de edicao so para ADMIN; OPERADOR apenas consulta
     const admin = Ui.admin();
 
     function montarConsulta() {
@@ -105,7 +105,7 @@
                 categoria.appendChild(opcao);
             });
         } catch (problema) {
-            // Se o filtro de categoria falhar a lista continua funcionando
+            // Falha no filtro de categoria nao bloqueia a lista
         }
     }
 
@@ -158,8 +158,7 @@
         carregar();
     });
 
-    // Quando o usuario clica no alerta do painel ele cai aqui
-    // ja com o filtro de reposicao marcado
+    // ?abaixoDoMinimo=true (link do alerta do painel) ja abre com o filtro marcado
     const entrada = new URLSearchParams(window.location.search);
     if (entrada.get('abaixoDoMinimo') === 'true') {
         abaixoDoMinimo.checked = true;

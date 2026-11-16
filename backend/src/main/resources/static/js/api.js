@@ -1,10 +1,8 @@
-/* Arquivo com as funcoes que chamam a API.
-   Todas as telas usam este arquivo para nao repetir fetch em cada pagina. */
+/* Cliente HTTP compartilhado pelas telas: fetch com CSRF, tratamento de erro e sessao expirada */
 
 const Api = (function () {
 
-    // Pega a mensagem de erro que o backend mandou.
-    // O campo 'detail' vem do nosso tratador de excecoes.
+    // Extrai a mensagem do ProblemDetail devolvido pelo ApiExceptionHandler
     async function lerProblema(resposta) {
         let corpo = null;
         try {
@@ -14,18 +12,18 @@ const Api = (function () {
         }
 
         if (!corpo) {
-            return { mensagem: 'Falha na comunicacao com o servidor (HTTP ' + resposta.status + ').', erros: {} };
+            return { mensagem: 'Falha na comunicação com o servidor (HTTP ' + resposta.status + ').', erros: {} };
         }
 
         return {
-            mensagem: corpo.detail || corpo.title || 'Nao foi possivel completar a operacao.',
+            mensagem: corpo.detail || corpo.title || 'Não foi possível completar a operação.',
             erros: corpo.erros || {},
             status: resposta.status
         };
     }
 
-    // O Spring Security exige o token CSRF em tudo que nao e GET.
-    // O layout coloca o token em duas <meta> no cabecalho da pagina.
+    // Token CSRF exigido pelo Spring Security em metodos que alteram dados.
+    // Lido das <meta> _csrf e _csrf_header que o layout gera.
     function cabecalhoCsrf() {
         const token = document.querySelector('meta[name="_csrf"]');
         const nome = document.querySelector('meta[name="_csrf_header"]');
@@ -47,10 +45,10 @@ const Api = (function () {
 
         const resposta = await fetch(url, opcoes);
 
-        // Sessao expirou: manda de volta para o login
+        // Sessao expirada: redireciona para o login
         if (resposta.status === 401) {
             window.location.href = '/login?expirado=true';
-            throw { mensagem: 'Sua sessao expirou. Entre novamente.', erros: {}, status: 401 };
+            throw { mensagem: 'Sua sessão expirou. Entre novamente.', erros: {}, status: 401 };
         }
 
         if (!resposta.ok) {
@@ -81,7 +79,7 @@ const Fmt = {
         return numero.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     },
 
-    // Tira os zeros do final, senao 4 aparece como 4,000
+    // Remove zeros a direita: 4.000 -> 4
     quantidade(valor) {
         const numero = Number(valor || 0);
         return numero.toLocaleString('pt-BR', { maximumFractionDigits: 3 });
@@ -107,7 +105,7 @@ const Fmt = {
 
 const Ui = {
 
-    // O layout grava o perfil de quem esta logado numa <meta> do cabecalho
+    // Perfil do usuario logado, lido da <meta> gerada pelo layout
     admin() {
         const perfil = document.querySelector('meta[name="perfil"]');
         return perfil !== null && perfil.content === 'ADMIN';
@@ -141,16 +139,14 @@ const Ui = {
         Ui.mostrar(elemento);
     },
 
-    // Escapa o texto antes de jogar na tabela, para o
-    // navegador nao interpretar HTML que veio do banco
+    // Escapa HTML antes de inserir dados do banco na pagina (evita XSS)
     texto(valor) {
         const span = document.createElement('span');
         span.textContent = valor === null || valor === undefined ? '' : String(valor);
         return span.innerHTML;
     },
 
-    // Espera o usuario parar de digitar para so entao chamar a API,
-    // senao faria uma requisicao a cada letra
+    // Debounce: so chama a API quando o usuario para de digitar
     debounce(fn, espera) {
         let timer = null;
         return function () {
@@ -187,7 +183,7 @@ const Toast = {
         caixa.innerHTML = Toast._icone(tipo) + '<span>' + Ui.texto(mensagem) + '</span>';
         area.appendChild(caixa);
 
-        // O aviso de erro fica mais tempo na tela para dar tempo de ler
+        // Avisos de erro ficam visiveis por mais tempo
         const duracao = tipo === 'erro' ? 7000 : 4000;
         setTimeout(() => {
             caixa.classList.add('aviso-flutuante--saindo');
@@ -204,8 +200,7 @@ const Toast = {
     }
 };
 
-/* Caixa de confirmacao usando a tag <dialog>.
-   Se o navegador for antigo e nao tiver <dialog>, usa o confirm() normal. */
+/* Confirmacao com <dialog>; usa o confirm() nativo se o navegador nao suportar */
 const Confirmacao = {
 
     perguntar(titulo, texto, rotuloAcao) {
@@ -231,8 +226,7 @@ const Confirmacao = {
 
 const Carregando = {
 
-    // Desabilita o botao enquanto salva.
-    // Guardamos a largura para o botao nao mudar de tamanho.
+    // Desabilita o botao durante o envio, mantendo a largura original
     botao(elemento, ocupado) {
         if (!elemento) {
             return;
@@ -247,7 +241,7 @@ const Carregando = {
         }
     },
 
-    // Mostra linhas cinza enquanto os dados nao chegam da API
+    // Linhas de carregamento (skeleton) enquanto a API responde
     linhasTabela(corpo, linhas, colunas) {
         corpo.replaceChildren();
         for (let i = 0; i < linhas; i += 1) {
@@ -268,8 +262,7 @@ const Carregando = {
     }
 };
 
-/* Botao que mostra ou esconde o endereco da API em cada tela.
-   Guardamos a escolha no navegador para nao perder ao trocar de pagina. */
+/* Alterna a exibicao das rotas da API em cada tela; a escolha fica no localStorage */
 (function prepararRotas() {
     const CHAVE = 'estoque:mostrarRotas';
 
@@ -296,7 +289,7 @@ const Carregando = {
             try {
                 window.localStorage.setItem(CHAVE, String(alternador.checked));
             } catch (e) {
-                // Em aba anonima o localStorage da erro, ai so ignoramos
+                // localStorage indisponivel (ex.: aba anonima): mantem o padrao
             }
         });
     });

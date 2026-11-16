@@ -6,8 +6,7 @@ import io.swagger.v3.oas.models.info.Info;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-// Configura o titulo e a descricao que aparecem no Swagger,
-// que fica em /swagger-ui.html
+// Metadados da documentacao OpenAPI (Swagger UI em /swagger-ui.html)
 @Configuration
 public class OpenApiConfig {
 

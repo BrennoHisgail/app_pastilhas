@@ -22,7 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("RelatorioService - exportacao em CSV")
+@DisplayName("RelatorioService - exportação em CSV")
 class RelatorioServiceTest {
 
     @Mock
@@ -39,21 +39,21 @@ class RelatorioServiceTest {
     }
 
     @Test
-    @DisplayName("estoque: BOM, cabecalho e uma linha por pastilha com decimal em virgula")
+    @DisplayName("estoque: BOM, cabeçalho e uma linha por pastilha com decimal em virgula")
     void estoque() {
         when(pastilhaRepository.findByAtivoTrueOrderByCodigoAsc()).thenReturn(List.of(
                 Fabrica.pastilha("CNMG120408", new BigDecimal("12.5"), new BigDecimal("20"))));
 
         String[] linhas = texto(service.estoque()).split("\r\n");
 
-        assertThat(linhas[0]).startsWith("﻿Codigo;Descricao;Categoria");
+        assertThat(linhas[0]).startsWith("﻿Código;Descrição;Categoria");
         // saldo 12,5 abaixo do minimo 20; valor = 12,5 x 10 = 125
         assertThat(linhas[1]).isEqualTo(
                 "CNMG120408;Pastilha de teste CNMG120408;Torneamento;UN;12,5;20;10;125;Repor");
     }
 
     @Test
-    @DisplayName("movimentacoes: usa os filtros do historico e mostra o responsavel")
+    @DisplayName("movimentações: usa os filtros do histórico e mostra o responsável")
     void movimentacoes() {
         MovimentacaoResponse m = new MovimentacaoResponse(
                 1L, 7L, "CNMG120408", "Pastilha", TipoMovimentacao.SAIDA,

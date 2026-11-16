@@ -3,8 +3,7 @@ package br.com.ddametalurgica.estoque.dto;
 import java.math.BigDecimal;
 import java.util.List;
 
-// Record com todos os numeros que o painel mostra de uma vez,
-// assim a tela faz uma chamada so na API.
+// Dados do painel inicial agregados numa unica resposta (uma chamada por carregamento)
 public record IndicadoresResponse(
         long itensCadastrados,
         long categorias,

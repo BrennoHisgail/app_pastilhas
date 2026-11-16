@@ -2,8 +2,8 @@ package br.com.ddametalurgica.estoque.dto;
 
 import java.util.List;
 
-// Resultado da tela de indicadores: o periodo usado e uma linha por pastilha,
-// ja na ordem da Curva ABC (quem mais consumiu dinheiro primeiro)
+// Resultado dos indicadores: periodo usado, totais por classe e uma linha por pastilha,
+// na ordem da Curva ABC (maior valor consumido primeiro)
 public record IndicadoresEstoqueResponse(
         int dias,
         long classeA,

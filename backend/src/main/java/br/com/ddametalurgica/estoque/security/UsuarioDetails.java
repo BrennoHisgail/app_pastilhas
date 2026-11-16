@@ -7,7 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-// Adapta o Usuario para o formato que o Spring Security usa no login
+// Adaptador do Usuario para o UserDetails do Spring Security
 public class UsuarioDetails implements UserDetails {
 
     private final Usuario usuario;
@@ -30,7 +30,7 @@ public class UsuarioDetails implements UserDetails {
         return usuario.getSenhaHash();
     }
 
-    // O login e feito pelo email, nao existe campo "username" separado
+    // O e-mail funciona como username
     @Override
     public String getUsername() {
         return usuario.getEmail();

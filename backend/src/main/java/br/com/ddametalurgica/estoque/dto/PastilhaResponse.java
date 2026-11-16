@@ -5,8 +5,7 @@ import br.com.ddametalurgica.estoque.domain.UnidadeMedida;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// Dados da pastilha que a API devolve.
-// A entidade Pastilha nunca sai do service, sempre convertemos para este record.
+// Resposta da API para uma pastilha. A entidade nao e exposta fora da camada de servico.
 public record PastilhaResponse(
         Long id,
         String codigo,

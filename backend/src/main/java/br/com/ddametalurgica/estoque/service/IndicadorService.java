@@ -20,8 +20,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Calcula os indicadores de estoque do material da disciplina, sempre
-// olhando as movimentacoes dos ultimos N dias:
+// Calcula os indicadores de estoque a partir das movimentacoes dos ultimos N dias:
 //
 //   consumo medio diario  d  = saidas do periodo / dias
 //   Ponto de Pedido       PP = (d x lead time) + estoque de seguranca
@@ -58,8 +57,7 @@ public class IndicadorService {
             }
         }
 
-        // Primeiro os numeros de cada pastilha, depois a Curva ABC,
-        // que precisa do total consumido de todas
+        // Calcula cada pastilha antes da Curva ABC, que depende do total consumido
         List<Linha> linhas = new ArrayList<>();
         for (Pastilha p : pastilhas) {
             BigDecimal entrou = entradas.getOrDefault(p.getId(), BigDecimal.ZERO);
@@ -107,7 +105,7 @@ public class IndicadorService {
         return parte.multiply(CEM).divide(total, 2, RoundingMode.HALF_UP);
     }
 
-    // Os calculos de uma pastilha, antes de saber a classe ABC
+    // Indicadores de uma pastilha, sem a classe ABC
     private static final class Linha {
 
         private final Pastilha pastilha;
@@ -128,13 +126,13 @@ public class IndicadorService {
                     .add(p.getEstoqueSeguranca())
                     .setScale(3, RoundingMode.HALF_UP);
 
-            // Sem consumo o estoque "dura para sempre": deixamos nulo
+            // Sem consumo a cobertura e indefinida: fica nula
             this.coberturaDias = consumoDiario.signum() == 0
                     ? null
                     : p.getSaldoAtual().divide(consumoDiario, 1, RoundingMode.HALF_UP);
 
-            // O saldo no inicio do periodo e o atual desfazendo o que
-            // entrou e saiu; o estoque medio e a media dos dois
+            // Saldo inicial = saldo atual - entradas + saidas do periodo;
+            // estoque medio = media entre saldo inicial e atual
             BigDecimal saldoInicial = p.getSaldoAtual().subtract(entrou).add(saiu);
             BigDecimal estoqueMedio = saldoInicial.add(p.getSaldoAtual())
                     .divide(BigDecimal.valueOf(2), 3, RoundingMode.HALF_UP);
@@ -145,8 +143,8 @@ public class IndicadorService {
             this.valorConsumido = saiu.multiply(p.getCustoUnitario()).setScale(2, RoundingMode.HALF_UP);
         }
 
-        // So faz sentido avisar quando a pastilha tem consumo; sem consumo
-        // o PP e so o estoque de seguranca e o alerta do nivel minimo ja cobre
+        // So alerta com consumo no periodo: sem consumo o PP e apenas o estoque
+        // de seguranca, e o alerta de nivel minimo ja cobre o caso
         boolean abaixoDoPontoDePedido() {
             return consumo.signum() > 0 && pastilha.getSaldoAtual().compareTo(pontoDePedido) <= 0;
         }

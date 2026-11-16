@@ -5,8 +5,7 @@ import br.com.ddametalurgica.estoque.domain.TipoMovimentacao;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// Dados da movimentacao que a API devolve para a tela.
-// Usamos record para nao precisar escrever get de cada campo.
+// Resposta da API para uma movimentacao
 public record MovimentacaoResponse(
         Long id,
         Long pastilhaId,
@@ -22,7 +21,7 @@ public record MovimentacaoResponse(
         String usuarioNome
 ) {
 
-    // Converte a entidade do banco neste record
+    // Converte a entidade em DTO
     public static MovimentacaoResponse de(Movimentacao m) {
         return new MovimentacaoResponse(
                 m.getId(),

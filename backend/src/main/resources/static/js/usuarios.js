@@ -1,4 +1,4 @@
-/* Tela que lista os usuarios do sistema (so ADMIN abre) */
+/* Lista de usuarios (acesso restrito a ADMIN) */
 
 (function () {
 

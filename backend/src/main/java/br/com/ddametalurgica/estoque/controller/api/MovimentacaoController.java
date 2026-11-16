@@ -23,10 +23,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// Controller das entradas e saidas de estoque
+// Endpoints de entrada, saida e historico de movimentacoes
 @RestController
 @RequestMapping("/api/movimentacoes")
-@Tag(name = "Movimentacoes", description = "Entradas, saidas e historico do estoque")
+@Tag(name = "Movimentações", description = "Entradas, saídas e histórico do estoque")
 public class MovimentacaoController {
 
     private final MovimentacaoService service;
@@ -44,28 +44,28 @@ public class MovimentacaoController {
     }
 
     @PostMapping("/saida")
-    @Operation(summary = "Registra uma saida",
-            description = "Subtrai do saldo. Se nao tiver estoque suficiente devolve erro.")
+    @Operation(summary = "Registra uma saída",
+            description = "Subtrai do saldo. Se não houver estoque suficiente, devolve erro.")
     public ResponseEntity<MovimentacaoResponse> saida(@RequestBody @Valid MovimentacaoRequest dados) {
         MovimentacaoResponse criada = service.registrarSaida(dados);
         return ResponseEntity.created(URI.create("/api/movimentacoes/" + criada.id())).body(criada);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Busca uma movimentacao pelo id",
-            description = "E o endereco devolvido no cabecalho Location ao registrar entrada ou saida.")
+    @Operation(summary = "Busca uma movimentação pelo id",
+            description = "É o endereço devolvido no cabeçalho Location ao registrar entrada ou saída.")
     public MovimentacaoResponse buscarPorId(@PathVariable Long id) {
         return service.buscarPorId(id);
     }
 
     @GetMapping
-    @Operation(summary = "Consulta o historico",
-            description = "Filtra por pastilha e por periodo, do mais novo para o mais antigo.")
+    @Operation(summary = "Consulta o histórico",
+            description = "Filtra por pastilha e por período, do mais novo para o mais antigo.")
     public Page<MovimentacaoResponse> historico(
             @Parameter(description = "Filtra por pastilha; ausente traz todas") @RequestParam(required = false) Long pastilhaId,
-            @Parameter(description = "Data inicial, formato aaaa-MM-dd")
+            @Parameter(description = "Data inicial (aaaa-mm-dd)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate de,
-            @Parameter(description = "Data final, formato aaaa-MM-dd")
+            @Parameter(description = "Data final (aaaa-mm-dd)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate ate,
             @ParameterObject @PageableDefault(size = 20) Pageable pageable) {
 

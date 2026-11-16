@@ -42,7 +42,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("MovimentacaoService - entradas, saidas e historico")
+@DisplayName("MovimentacaoService - entradas, saídas e histórico")
 class MovimentacaoServiceTest {
 
     @Mock
@@ -71,7 +71,7 @@ class MovimentacaoServiceTest {
     class Entrada {
 
         @Test
-        @DisplayName("soma no saldo e guarda o saldo resultante na movimentacao")
+        @DisplayName("soma no saldo e guarda o saldo resultante na movimentação")
         void somaNoSaldo() {
             Pastilha pastilha = Fabrica.comId(
                     Fabrica.pastilha("A1", new BigDecimal("100"), new BigDecimal("20")), 1L);
@@ -106,7 +106,7 @@ class MovimentacaoServiceTest {
         }
 
         @Test
-        @DisplayName("grava o usuario logado na movimentacao")
+        @DisplayName("grava o usuário logado na movimentação")
         void gravaUsuarioLogado() {
             Usuario usuario = Fabrica.comId(Fabrica.usuario("operador@dda.com.br"), 5L);
             UsuarioDetails logado = new UsuarioDetails(usuario);
@@ -120,11 +120,11 @@ class MovimentacaoServiceTest {
 
             verify(repository).save(movimentacaoSalva.capture());
             assertThat(movimentacaoSalva.getValue().getUsuario()).isSameAs(usuario);
-            assertThat(resposta.usuarioNome()).isEqualTo("Usuario de teste");
+            assertThat(resposta.usuarioNome()).isEqualTo("Usuário de teste");
         }
 
         @Test
-        @DisplayName("sem ninguem logado a movimentacao fica sem usuario")
+        @DisplayName("sem ninguem logado a movimentação fica sem usuário")
         void semUsuario() {
             Pastilha pastilha = Fabrica.comId(
                     Fabrica.pastilha("A1", new BigDecimal("100"), new BigDecimal("20")), 1L);
@@ -153,7 +153,7 @@ class MovimentacaoServiceTest {
         }
 
         @Test
-        @DisplayName("aceita a saida que zera exatamente o estoque")
+        @DisplayName("aceita a saída que zera exatamente o estoque")
         void aceitaZerarOEstoque() {
             Pastilha pastilha = Fabrica.comId(
                     Fabrica.pastilha("A1", new BigDecimal("40"), new BigDecimal("20")), 1L);
@@ -164,7 +164,7 @@ class MovimentacaoServiceTest {
         }
 
         @Test
-        @DisplayName("recusa a saida maior que o saldo e nao mexe no estoque")
+        @DisplayName("recusa a saída maior que o saldo e não mexe no estoque")
         void recusaSaldoInsuficiente() {
             Pastilha pastilha = Fabrica.comId(
                     Fabrica.pastilha("A1", new BigDecimal("10"), new BigDecimal("20")), 1L);
@@ -180,7 +180,7 @@ class MovimentacaoServiceTest {
         }
 
         @Test
-        @DisplayName("a mensagem de saldo insuficiente mostra os numeros sem zeros sobrando")
+        @DisplayName("a mensagem de saldo insuficiente mostra os números sem zeros sobrando")
         void mensagemSemZerosSobrando() {
             Pastilha pastilha = Fabrica.comId(
                     Fabrica.pastilha("A1", new BigDecimal("4.000"), new BigDecimal("20")), 1L);
@@ -198,17 +198,17 @@ class MovimentacaoServiceTest {
     class RegrasComuns {
 
         @Test
-        @DisplayName("devolve 404 quando a pastilha nao existe")
+        @DisplayName("devolve 404 quando a pastilha não existe")
         void pastilhaInexistente() {
             when(pastilhaRepository.buscarParaMovimentar(1L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> service.registrarEntrada(pedido(BigDecimal.TEN)))
                     .isInstanceOf(RecursoNaoEncontradoException.class)
-                    .hasMessageContaining("nao encontrada");
+                    .hasMessageContaining("não encontrada");
         }
 
         @Test
-        @DisplayName("pastilha inativa nao aceita entrada nem saida")
+        @DisplayName("pastilha inativa não aceita entrada nem saída")
         void pastilhaInativa() {
             Pastilha pastilha = Fabrica.comId(Fabrica.pastilha("A1"), 1L);
             pastilha.inativar();
@@ -224,7 +224,7 @@ class MovimentacaoServiceTest {
         }
 
         @Test
-        @DisplayName("le a pastilha com trava, para duas saidas ao mesmo tempo nao zerarem o estoque")
+        @DisplayName("le a pastilha com trava, para duas saídas ao mesmo tempo não zerarem o estoque")
         void usaLeituraComTrava() {
             Pastilha pastilha = Fabrica.comId(Fabrica.pastilha("A1"), 1L);
             devolvePastilha(pastilha);
@@ -236,7 +236,7 @@ class MovimentacaoServiceTest {
         }
 
         @Test
-        @DisplayName("campo opcional vazio ou so com espacos e gravado como nulo")
+        @DisplayName("campo opcional vazio ou só com espacos e gravado como nulo")
         void limpaCamposOpcionais() {
             Pastilha pastilha = Fabrica.comId(Fabrica.pastilha("A1"), 1L);
             devolvePastilha(pastilha);
@@ -251,7 +251,7 @@ class MovimentacaoServiceTest {
         }
 
         @Test
-        @DisplayName("campo opcional preenchido perde so os espacos das pontas")
+        @DisplayName("campo opcional preenchido perde só os espacos das pontas")
         void mantemCamposPreenchidos() {
             Pastilha pastilha = Fabrica.comId(Fabrica.pastilha("A1"), 1L);
             devolvePastilha(pastilha);
@@ -272,7 +272,7 @@ class MovimentacaoServiceTest {
     class BuscaPorId {
 
         @Test
-        @DisplayName("devolve a movimentacao com os dados da pastilha")
+        @DisplayName("devolve a movimentação com os dados da pastilha")
         void encontra() {
             Pastilha pastilha = Fabrica.comId(Fabrica.pastilha("A1"), 1L);
             Movimentacao movimentacao = new Movimentacao(
@@ -299,7 +299,7 @@ class MovimentacaoServiceTest {
         private final Pageable pagina = PageRequest.of(0, 20);
 
         @Test
-        @DisplayName("sem filtro usa id zero e um periodo bem largo")
+        @DisplayName("sem filtro usa id zero e um período bem largo")
         void semFiltro() {
             when(repository.buscar(eq(0L), any(), any(), eq(pagina))).thenReturn(Page.empty(pagina));
 
@@ -328,7 +328,7 @@ class MovimentacaoServiceTest {
         }
 
         @Test
-        @DisplayName("recusa periodo invertido, com a data inicial depois da final")
+        @DisplayName("recusa período invertido, com a data inicial depois da final")
         void periodoInvertido() {
             assertThatThrownBy(() -> service.historico(
                     null, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 2, 1), pagina))
@@ -339,7 +339,7 @@ class MovimentacaoServiceTest {
         }
 
         @Test
-        @DisplayName("aceita o mesmo dia como inicio e fim")
+        @DisplayName("aceita o mesmo dia como início e fim")
         void mesmoDia() {
             when(repository.buscar(eq(0L), any(), any(), eq(pagina))).thenReturn(Page.empty(pagina));
 

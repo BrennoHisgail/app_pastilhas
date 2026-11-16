@@ -5,7 +5,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-// Coloca o usuario logado em todas as telas, para o menu mostrar o nome
+// Disponibiliza o usuario logado no model de todas as telas (nome e perfil no menu)
 @ControllerAdvice(basePackages = "br.com.ddametalurgica.estoque.controller.web")
 public class SessaoWebAdvice {
 

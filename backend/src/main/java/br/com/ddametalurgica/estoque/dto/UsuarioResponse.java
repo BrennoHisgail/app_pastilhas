@@ -4,8 +4,7 @@ import br.com.ddametalurgica.estoque.domain.PerfilUsuario;
 import br.com.ddametalurgica.estoque.domain.Usuario;
 import java.time.LocalDateTime;
 
-// Dados do usuario que a API devolve.
-// Nao tem o hash da senha, para ele nunca ir para a tela.
+// Resposta da API para um usuario. Nao inclui o hash da senha.
 public record UsuarioResponse(
         Long id,
         String nome,

@@ -6,6 +6,10 @@ import br.com.ddametalurgica.estoque.dto.PastilhaResponse;
 import br.com.ddametalurgica.estoque.service.PastilhaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.headers.Header;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -27,9 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// Controller do cadastro de pastilhas.
-// Aqui nao tem regra de negocio, so recebe a requisicao,
-// chama o service e devolve a resposta.
+// Endpoints do cadastro de pastilhas. Sem regra de negocio: delega ao PastilhaService.
 @RestController
 @RequestMapping("/api/pastilhas")
 @Tag(name = "Pastilhas", description = "Cadastro e consulta das pastilhas")
@@ -42,12 +44,12 @@ public class PastilhaController {
     }
 
     @GetMapping
-    @Operation(summary = "Lista as pastilhas com filtros e paginacao")
+    @Operation(summary = "Lista as pastilhas com filtros e paginação")
     public Page<PastilhaResponse> listar(
-            @Parameter(description = "Trecho do codigo ou da descricao") @RequestParam(required = false) String busca,
+            @Parameter(description = "Trecho do código ou da descrição") @RequestParam(required = false) String busca,
             @Parameter(description = "Categoria exata") @RequestParam(required = false) String categoria,
             @Parameter(description = "false lista as pastilhas inativadas") @RequestParam(defaultValue = "true") boolean ativo,
-            @Parameter(description = "true traz so os itens que precisam de reposicao")
+            @Parameter(description = "true traz só os itens que precisam de reposição")
             @RequestParam(defaultValue = "false") boolean abaixoDoMinimo,
             @ParameterObject @PageableDefault(size = 20, sort = "codigo", direction = Sort.Direction.ASC) Pageable pageable) {
 
@@ -67,28 +69,36 @@ public class PastilhaController {
     }
 
     @PostMapping
+    @ApiResponse(responseCode = "201", description = "Pastilha criada",
+            headers = @Header(name = "Location", description = "Endereço do registro criado"),
+            content = @Content(schema = @Schema(implementation = PastilhaResponse.class)))
+    @ApiResponse(responseCode = "409", description = "Já existe uma pastilha com o código informado", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/ProblemDetail")))
     @Operation(summary = "Cadastra uma pastilha nova",
-            description = "O saldo nao e informado no cadastro, ele entra por uma movimentacao de entrada.")
+            description = "O saldo não é informado no cadastro: ele entra por uma movimentação de entrada.")
     public ResponseEntity<PastilhaResponse> criar(@RequestBody @Valid PastilhaRequest dados) {
         PastilhaResponse criada = service.criar(dados);
         return ResponseEntity.created(URI.create("/api/pastilhas/" + criada.id())).body(criada);
     }
 
     @PutMapping("/{id}")
+    @ApiResponse(responseCode = "200", description = "Pastilha alterada",
+            content = @Content(schema = @Schema(implementation = PastilhaResponse.class)))
+    @ApiResponse(responseCode = "409", description = "Código já usado por outra pastilha, ou alteração simultânea", content = @Content(mediaType = "application/problem+json", schema = @Schema(ref = "#/components/schemas/ProblemDetail")))
     @Operation(summary = "Altera os dados de uma pastilha")
     public PastilhaResponse atualizar(@PathVariable Long id, @RequestBody @Valid PastilhaRequest dados) {
         return service.atualizar(id, dados);
     }
 
     @PatchMapping("/{id}/nivel-minimo")
-    @Operation(summary = "Altera so o nivel minimo da pastilha")
+    @Operation(summary = "Altera só o nível mínimo da pastilha")
     public PastilhaResponse alterarNivelMinimo(@PathVariable Long id, @RequestBody @Valid NivelMinimoRequest dados) {
         return service.alterarNivelMinimo(id, dados.nivelMinimo());
     }
 
     @DeleteMapping("/{id}")
+    @ApiResponse(responseCode = "204", description = "Pastilha inativada (repetir o pedido também devolve 204)")
     @Operation(summary = "Inativa a pastilha",
-            description = "Nao apaga do banco, so marca como inativa para nao perder o historico.")
+            description = "Não apaga do banco, só marca como inativa para não perder o histórico.")
     public ResponseEntity<Void> inativar(@PathVariable Long id) {
         service.inativar(id);
         return ResponseEntity.noContent().build();

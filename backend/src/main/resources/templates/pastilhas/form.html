@@ -140,7 +140,7 @@
                 <div class="cartao__corpo">
                     <div class="campo__rotulo">Ponto de Pedido</div>
                     <p style="margin: 10px 0 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.6;">
-                        Lead time e estoque de segurança alimentam a fórmula que vai substituir o nível mínimo fixo:
+                        Lead time e estoque de segurança entram no cálculo do Ponto de Pedido, na tela de Indicadores:
                     </p>
                     <div class="formula" style="margin-top: 12px;">PP = (d × t) + Qs</div>
                     <p style="margin: 10px 0 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.55;">
@@ -163,7 +163,7 @@
     </div>
 </main>
 
-<!-- Vem vazio no cadastro novo e com o id quando é edição -->
+<!-- Vazio no cadastro; preenchido com o id na edicao -->
 <footer th:replace="~{fragments/layout :: rodape}"></footer>
 <div th:replace="~{fragments/layout :: dialogo}"></div>
 <div th:replace="~{fragments/layout :: toasts}"></div>

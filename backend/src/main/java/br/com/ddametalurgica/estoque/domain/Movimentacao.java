@@ -15,13 +15,9 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// Entidade que guarda cada entrada ou saida do estoque.
-//
-// O campo saldoApos grava como ficou o saldo depois do lancamento,
-// assim da para conferir o historico depois.
-//
-// A movimentacao nao tem metodo de alterar de proposito: se o
-// usuario errar, ele lanca uma nova movimentacao para corrigir.
+// Lancamento de entrada ou saida de estoque.
+// saldoApos registra o saldo resultante, para auditoria do historico.
+// Registro imutavel (sem setters): correcoes sao feitas com um novo lancamento.
 @Entity
 @Table(name = "movimentacao")
 public class Movimentacao {
@@ -47,8 +43,7 @@ public class Movimentacao {
     @Column(name = "data_hora", nullable = false)
     private LocalDateTime dataHora;
 
-    // Quem fez o lancamento. Fica nulo nos lancamentos antigos,
-    // feitos antes de existir o login.
+    // Responsavel pelo lancamento; nulo nos registros anteriores ao login
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "usuario_id")
     private Usuario usuario;
@@ -66,7 +61,6 @@ public class Movimentacao {
         // exigido pelo JPA
     }
 
-    // usuario pode ser null: lancamentos feitos antes de existir o login
     public Movimentacao(Pastilha pastilha,
                         TipoMovimentacao tipo,
                         BigDecimal quantidade,

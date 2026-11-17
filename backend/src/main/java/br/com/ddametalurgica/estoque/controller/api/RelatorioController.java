@@ -3,6 +3,9 @@ package br.com.ddametalurgica.estoque.controller.api;
 import br.com.ddametalurgica.estoque.service.RelatorioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -16,11 +19,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// Controller dos relatorios em CSV (RF14). O navegador baixa o arquivo
-// direto, por isso o cabecalho Content-Disposition: attachment.
+// Exportacao em CSV (RF14). O Content-Disposition: attachment faz o navegador baixar o arquivo.
 @RestController
 @RequestMapping("/api/relatorios")
-@Tag(name = "Relatorios", description = "Exportacao do estoque e das movimentacoes em CSV")
+@Tag(name = "Relatórios", description = "Exportação do estoque e das movimentações em CSV")
 public class RelatorioController {
 
     private static final MediaType CSV = new MediaType("text", "csv", StandardCharsets.UTF_8);
@@ -32,13 +34,17 @@ public class RelatorioController {
     }
 
     @GetMapping("/estoque.csv")
-    @Operation(summary = "Posicao do estoque em CSV", description = "Todas as pastilhas ativas com saldo e valor.")
+    @ApiResponse(responseCode = "200", description = "Arquivo CSV (separador ;)",
+            content = @Content(mediaType = "text/csv", schema = @Schema(type = "string", format = "binary")))
+    @Operation(summary = "Posição do estoque em CSV", description = "Todas as pastilhas ativas com saldo e valor.")
     public ResponseEntity<byte[]> estoque() {
         return arquivo("estoque-" + LocalDate.now() + ".csv", service.estoque());
     }
 
     @GetMapping("/movimentacoes.csv")
-    @Operation(summary = "Movimentacoes em CSV", description = "Mesmos filtros do historico, sem paginacao.")
+    @ApiResponse(responseCode = "200", description = "Arquivo CSV (separador ;)",
+            content = @Content(mediaType = "text/csv", schema = @Schema(type = "string", format = "binary")))
+    @Operation(summary = "Movimentações em CSV", description = "Mesmos filtros do histórico, sem paginação.")
     public ResponseEntity<byte[]> movimentacoes(
             @Parameter(description = "Filtra por pastilha; ausente traz todas") @RequestParam(required = false) Long pastilhaId,
             @Parameter(description = "Data inicial (aaaa-mm-dd)")

@@ -14,9 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 // Gera os relatorios em CSV (RF14).
 //
-// O arquivo sai no formato que o Excel em portugues abre direto:
-// separador ";", decimal com virgula e o BOM no comeco para ele
-// reconhecer os acentos em UTF-8.
+// Formato compativel com o Excel em portugues: separador ";", decimal com
+// virgula e BOM no inicio para o UTF-8 ser reconhecido.
 @Service
 public class RelatorioService {
 
@@ -34,8 +33,8 @@ public class RelatorioService {
     @Transactional(readOnly = true)
     public byte[] estoque() {
         StringBuilder csv = new StringBuilder(BOM);
-        linha(csv, "Codigo", "Descricao", "Categoria", "Unidade", "Saldo", "Nivel minimo",
-                "Custo unitario", "Valor em estoque", "Situacao");
+        linha(csv, "Código", "Descrição", "Categoria", "Unidade", "Saldo", "Nível mínimo",
+                "Custo unitário", "Valor em estoque", "Situação");
 
         for (Pastilha p : pastilhaRepository.findByAtivoTrueOrderByCodigoAsc()) {
             linha(csv,
@@ -52,7 +51,7 @@ public class RelatorioService {
         return csv.toString().getBytes(StandardCharsets.UTF_8);
     }
 
-    // Usa os mesmos filtros da tela de historico, mas sem paginacao
+    // Mesmos filtros do historico, sem paginacao
     @Transactional(readOnly = true)
     public byte[] movimentacoes(Long pastilhaId, LocalDate de, LocalDate ate) {
         List<MovimentacaoResponse> lista = movimentacaoService
@@ -60,8 +59,8 @@ public class RelatorioService {
                 .getContent();
 
         StringBuilder csv = new StringBuilder(BOM);
-        linha(csv, "Data", "Codigo", "Descricao", "Tipo", "Quantidade", "Saldo apos",
-                "Documento", "Origem/Destino", "Responsavel", "Observacao");
+        linha(csv, "Data", "Código", "Descrição", "Tipo", "Quantidade", "Saldo após",
+                "Documento", "Origem/Destino", "Responsável", "Observação");
 
         for (MovimentacaoResponse m : lista) {
             linha(csv,
@@ -89,8 +88,7 @@ public class RelatorioService {
         csv.append("\r\n");
     }
 
-    // Texto com ; aspas ou quebra de linha vai entre aspas, com as
-    // aspas de dentro dobradas, senao quebraria as colunas
+    // Escapa ; aspas e quebras de linha (RFC 4180): campo entre aspas e aspas internas dobradas
     static String campo(String valor) {
         if (valor == null) {
             return "";

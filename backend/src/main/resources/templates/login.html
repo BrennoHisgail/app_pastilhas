@@ -3,7 +3,7 @@
 <head th:replace="~{fragments/layout :: head('Entrar')}"></head>
 <body>
 
-<!-- Unica tela sem o menu de cima: quem chega aqui ainda nao esta logado -->
+<!-- Tela publica, sem o menu do layout -->
 <main class="login" id="conteudo">
     <div class="login__caixa">
 
@@ -20,7 +20,7 @@
             </div>
         </div>
 
-        <!-- O Thymeleaf coloca sozinho o campo escondido do CSRF neste form -->
+        <!-- O Thymeleaf injeta o campo oculto do CSRF neste form -->
         <form class="cartao" th:action="@{/login}" method="post">
             <div class="cartao__corpo login__form">
 

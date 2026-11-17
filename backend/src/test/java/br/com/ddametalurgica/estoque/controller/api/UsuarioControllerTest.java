@@ -46,7 +46,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(UsuarioController.class)
 @Import({SecurityConfig.class, ApiExceptionHandler.class})
 @WithMockUser(roles = "ADMIN")
-@DisplayName("UsuarioController - contrato HTTP da gestao de usuarios")
+@DisplayName("UsuarioController - contrato HTTP da gestão de usuários")
 class UsuarioControllerTest {
 
     @Autowired
@@ -79,11 +79,11 @@ class UsuarioControllerTest {
     @Test
     @DisplayName("GET /api/usuarios/{id} inexistente devolve 404")
     void buscarInexistente() throws Exception {
-        when(service.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Usuario 99 nao encontrado."));
+        when(service.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Usuário 99 não encontrado."));
 
         mvc.perform(get("/api/usuarios/99"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Usuario 99 nao encontrado."));
+                .andExpect(jsonPath("$.detail").value("Usuário 99 não encontrado."));
     }
 
     @Test
@@ -116,14 +116,14 @@ class UsuarioControllerTest {
     @Test
     @DisplayName("POST com email repetido devolve 409")
     void recusaEmailDuplicado() throws Exception {
-        when(service.criar(any())).thenThrow(new RegraNegocioException("Ja existe um usuario com o email x@dda.com.br."));
+        when(service.criar(any())).thenThrow(new RegraNegocioException("Já existe um usuário com o e-mail x@dda.com.br."));
 
         mvc.perform(post("/api/usuarios").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(
                                 new UsuarioCreateRequest("X", "x@dda.com.br", "senha12345", PerfilUsuario.OPERADOR))))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.title").value("Regra de negocio violada"));
+                .andExpect(jsonPath("$.title").value("Regra de negócio violada"));
     }
 
     @Test
@@ -159,14 +159,14 @@ class UsuarioControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE que viola regra de negocio devolve 409")
+    @DisplayName("DELETE que viola regra de negócio devolve 409")
     void inativacaoRecusada() throws Exception {
-        org.mockito.Mockito.doThrow(new RegraNegocioException("Voce nao pode inativar o proprio usuario."))
+        org.mockito.Mockito.doThrow(new RegraNegocioException("Você não pode inativar o próprio usuário."))
                 .when(service).inativar(1L);
 
         mvc.perform(delete("/api/usuarios/1").with(csrf()))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.detail").value("Voce nao pode inativar o proprio usuario."));
+                .andExpect(jsonPath("$.detail").value("Você não pode inativar o próprio usuário."));
     }
 
     @Test

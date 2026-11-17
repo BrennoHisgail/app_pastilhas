@@ -98,12 +98,12 @@ class PastilhaControllerTest {
     @Test
     @DisplayName("GET /api/pastilhas/{id} inexistente devolve 404 com a mensagem do service")
     void buscarInexistente() throws Exception {
-        when(service.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Pastilha 99 nao encontrada."));
+        when(service.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Pastilha 99 não encontrada."));
 
         mvc.perform(get("/api/pastilhas/99"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.title").value("Recurso nao encontrado"))
-                .andExpect(jsonPath("$.detail").value("Pastilha 99 nao encontrada."));
+                .andExpect(jsonPath("$.title").value("Recurso não encontrado"))
+                .andExpect(jsonPath("$.detail").value("Pastilha 99 não encontrada."));
     }
 
     @Test
@@ -111,7 +111,7 @@ class PastilhaControllerTest {
     void idNaoNumerico() throws Exception {
         mvc.perform(get("/api/pastilhas/abc"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.title").value("Dados invalidos"));
+                .andExpect(jsonPath("$.title").value("Dados inválidos"));
     }
 
     @Test
@@ -136,7 +136,7 @@ class PastilhaControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(vazia)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.title").value("Dados invalidos"))
+                .andExpect(jsonPath("$.title").value("Dados inválidos"))
                 .andExpect(jsonPath("$.erros.codigo").exists())
                 .andExpect(jsonPath("$.erros.descricao").exists())
                 .andExpect(jsonPath("$.erros.categoria").exists())
@@ -163,20 +163,20 @@ class PastilhaControllerTest {
     }
 
     @Test
-    @DisplayName("POST com codigo repetido devolve 409")
+    @DisplayName("POST com código repetido devolve 409")
     void recusaCodigoDuplicado() throws Exception {
-        when(service.criar(any())).thenThrow(new RegraNegocioException("Ja existe uma pastilha com o codigo X1."));
+        when(service.criar(any())).thenThrow(new RegraNegocioException("Já existe uma pastilha com o código X1."));
 
         mvc.perform(post("/api/pastilhas").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Fabrica.requisicao("X1"))))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.title").value("Regra de negocio violada"))
-                .andExpect(jsonPath("$.detail").value("Ja existe uma pastilha com o codigo X1."));
+                .andExpect(jsonPath("$.title").value("Regra de negócio violada"))
+                .andExpect(jsonPath("$.detail").value("Já existe uma pastilha com o código X1."));
     }
 
     @Test
-    @DisplayName("POST com unidade de medida inexistente devolve 400, nao 500")
+    @DisplayName("POST com unidade de medida inexistente devolve 400, não 500")
     void recusaUnidadeInvalida() throws Exception {
         String corpo = """
                 {"codigo":"X1","descricao":"Teste","categoria":"Torneamento",
@@ -186,13 +186,13 @@ class PastilhaControllerTest {
 
         mvc.perform(post("/api/pastilhas").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.title").value("Dados invalidos"));
+                .andExpect(jsonPath("$.title").value("Dados inválidos"));
     }
 
     @Test
-    @DisplayName("POST com JSON quebrado devolve 400, nao 500")
+    @DisplayName("POST com JSON quebrado devolve 400, não 500")
     void recusaJsonQuebrado() throws Exception {
-        mvc.perform(post("/api/pastilhas").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{ isto nao e json"))
+        mvc.perform(post("/api/pastilhas").with(csrf()).contentType(MediaType.APPLICATION_JSON).content("{ isto não é json"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -209,7 +209,7 @@ class PastilhaControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH nivel-minimo altera so o nivel minimo")
+    @DisplayName("PATCH nível-minimo altera só o nível mínimo")
     void alteraNivelMinimo() throws Exception {
         when(service.alterarNivelMinimo(eq(1L), any(BigDecimal.class))).thenReturn(resposta(1L, "CNMG120408"));
 
@@ -222,7 +222,7 @@ class PastilhaControllerTest {
     }
 
     @Test
-    @DisplayName("PATCH nivel-minimo negativo devolve 400")
+    @DisplayName("PATCH nível-minimo negativo devolve 400")
     void recusaNivelMinimoNegativo() throws Exception {
         mvc.perform(patch("/api/pastilhas/1/nivel-minimo").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -244,7 +244,7 @@ class PastilhaControllerTest {
     }
 
     @Test
-    @DisplayName("DELETE em pastilha ja inativa devolve 204 de novo (idempotente)")
+    @DisplayName("DELETE em pastilha já inativa devolve 204 de novo (idempotente)")
     void inativarDuasVezesEIdempotente() throws Exception {
         mvc.perform(delete("/api/pastilhas/1").with(csrf()))
                 .andExpect(status().isNoContent());
@@ -274,7 +274,7 @@ class PastilhaControllerTest {
 
     @Test
     @WithMockUser(roles = "OPERADOR")
-    @DisplayName("OPERADOR nao pode cadastrar pastilha: 403")
+    @DisplayName("OPERADOR não pode cadastrar pastilha: 403")
     void operadorNaoCadastra() throws Exception {
         mvc.perform(post("/api/pastilhas").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

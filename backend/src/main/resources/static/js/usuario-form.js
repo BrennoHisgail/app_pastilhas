@@ -24,7 +24,7 @@
         document.querySelectorAll('[aria-invalid]').forEach((campo) => campo.removeAttribute('aria-invalid'));
     }
 
-    // Mostra embaixo de cada campo o erro de validacao que veio do backend
+    // Exibe os erros de validacao do backend abaixo de cada campo
     function marcarErrosDeCampo(erros) {
         Object.keys(erros || {}).forEach((campo) => {
             const span = document.querySelector('[data-erro="' + campo + '"]');
@@ -39,8 +39,7 @@
         });
     }
 
-    // Na edicao o email e a senha nao vao junto: o email nao muda
-    // e a senha tem o formulario proprio logo abaixo
+    // Na edicao nao envia e-mail (imutavel) nem senha (tem formulario proprio)
     function lerFormulario() {
         const dados = {
             nome: document.getElementById('nome').value.trim(),

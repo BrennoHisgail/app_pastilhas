@@ -42,7 +42,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("UsuarioService - regras da gestao de usuarios")
+@DisplayName("UsuarioService - regras da gestão de usuários")
 class UsuarioServiceTest {
 
     @Mock
@@ -72,7 +72,7 @@ class UsuarioServiceTest {
     class Criar {
 
         @Test
-        @DisplayName("grava o usuario quando o email ainda nao existe")
+        @DisplayName("grava o usuário quando o email ainda não existe")
         void criaComEmailNovo() {
             when(repository.existsByEmailIgnoreCase("nova@dda.com.br")).thenReturn(false);
             when(encoder.encode("senha12345")).thenReturn("hash-criptografado");
@@ -106,7 +106,7 @@ class UsuarioServiceTest {
             assertThatThrownBy(() -> service.criar(
                     new UsuarioCreateRequest("Outra", "ADMIN@dda.com.br", "senha12345", PerfilUsuario.ADMIN)))
                     .isInstanceOf(RegraNegocioException.class)
-                    .hasMessageContaining("Ja existe um usuario");
+                    .hasMessageContaining("Já existe um usuário");
 
             verify(repository, never()).save(any());
         }
@@ -131,7 +131,7 @@ class UsuarioServiceTest {
         }
 
         @Test
-        @DisplayName("devolve 404 quando o id nao existe")
+        @DisplayName("devolve 404 quando o id não existe")
         void idInexistente() {
             when(repository.findById(99L)).thenReturn(Optional.empty());
 
@@ -160,7 +160,7 @@ class UsuarioServiceTest {
     class Ciclo {
 
         @Test
-        @DisplayName("inativar marca o usuario como inativo em vez de apagar")
+        @DisplayName("inativar marca o usuário como inativo em vez de apagar")
         void inativaSemApagar() {
             Usuario existente = Fabrica.comId(Fabrica.usuario("fulana@dda.com.br"), 1L);
             when(repository.findById(1L)).thenReturn(Optional.of(existente));
@@ -172,7 +172,7 @@ class UsuarioServiceTest {
         }
 
         @Test
-        @DisplayName("inativar um usuario ja inativo nao da erro nem grava de novo")
+        @DisplayName("inativar um usuário já inativo não da erro nem grava de novo")
         void inativarDuasVezesEIdempotente() {
             Usuario existente = Fabrica.comId(Fabrica.usuario("fulana@dda.com.br"), 1L);
             existente.inativar();
@@ -185,7 +185,7 @@ class UsuarioServiceTest {
         }
 
         @Test
-        @DisplayName("recusa inativar o proprio usuario logado")
+        @DisplayName("recusa inativar o próprio usuário logado")
         void recusaInativarAsiMesmo() {
             Usuario euMesmo = Fabrica.comId(Fabrica.usuario("eu@dda.com.br", PerfilUsuario.ADMIN), 1L);
             when(repository.findById(1L)).thenReturn(Optional.of(euMesmo));
@@ -193,13 +193,13 @@ class UsuarioServiceTest {
 
             assertThatThrownBy(() -> service.inativar(1L))
                     .isInstanceOf(RegraNegocioException.class)
-                    .hasMessageContaining("proprio usuario");
+                    .hasMessageContaining("próprio usuário");
 
             verify(repository, never()).save(any());
         }
 
         @Test
-        @DisplayName("recusa inativar o ultimo administrador ativo")
+        @DisplayName("recusa inativar o último administrador ativo")
         void recusaInativarUltimoAdmin() {
             Usuario ultimoAdmin = Fabrica.comId(Fabrica.usuario("admin@dda.com.br", PerfilUsuario.ADMIN), 1L);
             when(repository.findById(1L)).thenReturn(Optional.of(ultimoAdmin));
@@ -207,7 +207,7 @@ class UsuarioServiceTest {
 
             assertThatThrownBy(() -> service.inativar(1L))
                     .isInstanceOf(RegraNegocioException.class)
-                    .hasMessageContaining("ultimo administrador");
+                    .hasMessageContaining("último administrador");
 
             verify(repository, never()).save(any());
         }
@@ -226,7 +226,7 @@ class UsuarioServiceTest {
         }
 
         @Test
-        @DisplayName("reativar volta o usuario para ativo")
+        @DisplayName("reativar volta o usuário para ativo")
         void reativa() {
             Usuario existente = Fabrica.comId(Fabrica.usuario("fulana@dda.com.br"), 1L);
             existente.inativar();
@@ -267,7 +267,7 @@ class UsuarioServiceTest {
         }
 
         @Test
-        @DisplayName("buscarPorId devolve 404 quando nao acha")
+        @DisplayName("buscarPorId devolve 404 quando não acha")
         void buscarPorIdInexistente() {
             when(repository.findById(42L)).thenReturn(Optional.empty());
 

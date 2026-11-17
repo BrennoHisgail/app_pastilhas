@@ -21,9 +21,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Classe que cuida das entradas e saidas do estoque.
-// O @Transactional faz o saldo e a movimentacao serem gravados juntos:
-// se der erro no meio, o banco desfaz os dois.
+// Registro de entradas e saidas e consulta do historico.
+// @Transactional: o saldo da pastilha e a movimentacao sao gravados juntos;
+// em caso de erro, nenhum dos dois e persistido.
 @Service
 public class MovimentacaoService {
 
@@ -49,18 +49,17 @@ public class MovimentacaoService {
     public MovimentacaoResponse buscarPorId(Long id) {
         return repository.findComDetalhesById(id)
                 .map(MovimentacaoResponse::de)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Movimentacao " + id + " nao encontrada."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Movimentação " + id + " não encontrada."));
     }
 
     @Transactional(readOnly = true)
     public Page<MovimentacaoResponse> historico(Long pastilhaId, LocalDate de, LocalDate ate, Pageable pageable) {
-        // Quando o usuario nao informa as datas usamos um periodo bem grande,
-        // assim a consulta do repositorio nao precisa tratar campo nulo.
+        // Datas ausentes viram limites amplos, para a consulta nao tratar parametro nulo
         LocalDateTime inicio = de == null ? LocalDateTime.of(2000, 1, 1, 0, 0) : de.atStartOfDay();
         LocalDateTime fim = ate == null ? LocalDateTime.now().plusYears(1) : ate.atTime(LocalTime.MAX);
 
         if (inicio.isAfter(fim)) {
-            throw new DadosInvalidosException("A data inicial nao pode ser posterior a data final.");
+            throw new DadosInvalidosException("A data inicial não pode ser posterior à data final.");
         }
 
         return repository
@@ -68,18 +67,16 @@ public class MovimentacaoService {
                 .map(MovimentacaoResponse::de);
     }
 
-    // Metodo que a entrada e a saida usam, para nao repetir codigo
+    // Fluxo comum de entrada e saida
     private MovimentacaoResponse registrar(TipoMovimentacao tipo, MovimentacaoRequest dados) {
-        // Trava a linha da pastilha ate o fim da transacao. Sem isso, duas
-        // saidas simultaneas poderiam ler o mesmo saldo e zerar o estoque.
+        // Trava a linha da pastilha ate o fim da transacao: sem isso, duas saidas
+        // simultaneas poderiam ler o mesmo saldo e deixar o estoque negativo.
         Pastilha pastilha = pastilhaRepository.buscarParaMovimentar(dados.pastilhaId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException(
-                        "Pastilha " + dados.pastilhaId() + " nao encontrada."));
+                        "Pastilha " + dados.pastilhaId() + " não encontrada."));
 
-        // A propria pastilha confere as regras (ativa, saldo suficiente) e
-        // lanca OperacaoNaoPermitidaException se nao puder movimentar.
-        // Nao precisa chamar save na pastilha: o JPA grava a mudanca
-        // sozinho no fim da transacao
+        // A Pastilha valida as regras (ativa, saldo suficiente). Como a entidade esta
+        // gerenciada pelo JPA, o novo saldo e gravado no commit, sem save explicito.
         if (tipo == TipoMovimentacao.ENTRADA) {
             pastilha.registrarEntrada(dados.quantidade());
         } else {
@@ -98,7 +95,7 @@ public class MovimentacaoService {
         return MovimentacaoResponse.de(repository.save(movimentacao));
     }
 
-    // Quem esta lancando, ou null se ninguem estiver logado
+    // Usuario autenticado, ou null fora de uma requisicao autenticada
     private Usuario usuarioLogado() {
         Authentication autenticacao = SecurityContextHolder.getContext().getAuthentication();
         if (autenticacao == null || !(autenticacao.getPrincipal() instanceof UsuarioDetails detalhes)) {
@@ -107,7 +104,7 @@ public class MovimentacaoService {
         return detalhes.getUsuario();
     }
 
-    // Deixa null quando o campo opcional vem vazio ou so com espacos
+    // Campo opcional vazio ou so com espacos vira null
     private String textoOuNulo(String valor) {
         if (valor == null) {
             return null;

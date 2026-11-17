@@ -15,18 +15,11 @@ import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// Entidade da pastilha. Cada objeto desta classe vira uma linha
-// na tabela "pastilha" do banco.
+// Pastilha do catalogo.
 //
-// O saldo atual fica guardado aqui na propria pastilha para o
-// sistema nao ter que somar todas as movimentacoes toda vez que
-// alguem abre a tela.
-//
-// Repare que saldoAtual nao tem set: quem muda o saldo sao os
-// metodos registrarEntrada e registrarSaida la embaixo. E sao eles
-// que garantem as regras do saldo (pastilha ativa, saldo nunca
-// negativo), assim nenhum codigo de fora consegue deixar a pastilha
-// num estado invalido, mesmo que esqueca de conferir antes.
+// saldoAtual fica gravado na entidade para nao somar o historico a cada consulta.
+// Nao ha setter de saldo: so registrarEntrada/registrarSaida alteram o valor,
+// e eles validam as regras (pastilha ativa, quantidade positiva, saldo nunca negativo).
 @Entity
 @Table(name = "pastilha")
 public class Pastilha {
@@ -57,11 +50,11 @@ public class Pastilha {
     @Column(name = "custo_unitario", nullable = false, precision = 14, scale = 2)
     private BigDecimal custoUnitario = BigDecimal.ZERO;
 
-    // Quantos dias o fornecedor demora para entregar
+    // Prazo de entrega do fornecedor, em dias (t do Ponto de Pedido)
     @Column(name = "lead_time_dias", nullable = false)
     private Integer leadTimeDias = 0;
 
-    // Quantidade de reserva, para nao zerar o estoque
+    // Reserva para cobrir atrasos e picos de consumo (Qs do Ponto de Pedido)
     @Column(name = "estoque_seguranca", nullable = false, precision = 14, scale = 3)
     private BigDecimal estoqueSeguranca = BigDecimal.ZERO;
 
@@ -74,43 +67,41 @@ public class Pastilha {
     @Column(name = "atualizado_em")
     private LocalDateTime atualizadoEm;
 
-    // Se duas pessoas alterarem a mesma pastilha ao mesmo tempo, a segunda
-    // recebe erro em vez de sobrescrever o saldo com um valor antigo
+    // Lock otimista: uma alteracao concorrente baseada em dados antigos falha
+    // em vez de sobrescrever o saldo
     @Version
     @Column(name = "versao", nullable = false)
     private Long versao;
 
-    // O JPA chama este metodo sozinho antes de salvar pela primeira vez
+    // Data de criacao, preenchida na insercao
     @PrePersist
     void aoCriar() {
         this.criadoEm = LocalDateTime.now();
     }
 
-    // E este aqui antes de cada alteracao
+    // Data da ultima alteracao, preenchida a cada update
     @PreUpdate
     void aoAtualizar() {
         this.atualizadoEm = LocalDateTime.now();
     }
 
-    // Avisa se a pastilha precisa ser reposta
+    // Saldo no nivel minimo ou abaixo: precisa de reposicao
     public boolean isAbaixoDoMinimo() {
         return saldoAtual.compareTo(nivelMinimo) <= 0;
     }
 
-    // Confere se da para tirar essa quantidade do estoque
+    // Compara por valor (compareTo), ignorando a escala do BigDecimal
     public boolean temSaldoPara(BigDecimal quantidade) {
         return saldoAtual.compareTo(quantidade) >= 0;
     }
 
-    // Soma no saldo quando entra material
     public void registrarEntrada(BigDecimal quantidade) {
         exigirQuantidadePositiva(quantidade);
         exigirAtiva();
         this.saldoAtual = this.saldoAtual.add(quantidade);
     }
 
-    // Subtrai do saldo quando sai material. Recusa se nao tiver saldo,
-    // senao o estoque ficaria negativo.
+    // Recusa a saida maior que o saldo: o estoque nunca fica negativo
     public void registrarSaida(BigDecimal quantidade) {
         exigirQuantidadePositiva(quantidade);
         exigirAtiva();
@@ -118,7 +109,7 @@ public class Pastilha {
             throw new OperacaoNaoPermitidaException(
                     "Saldo insuficiente: a pastilha " + codigo + " tem "
                             + semZerosSobrando(saldoAtual) + " " + unidadeMedida
-                            + " em estoque, e a saida pede " + semZerosSobrando(quantidade) + ".");
+                            + " em estoque, e a saída pede " + semZerosSobrando(quantidade) + ".");
         }
         this.saldoAtual = this.saldoAtual.subtract(quantidade);
     }
@@ -126,19 +117,18 @@ public class Pastilha {
     private void exigirAtiva() {
         if (!ativo) {
             throw new OperacaoNaoPermitidaException(
-                    "A pastilha " + codigo + " esta inativa e nao aceita movimentacao.");
+                    "A pastilha " + codigo + " está inativa e não aceita movimentação.");
         }
     }
 
-    // O DTO ja valida isso na entrada da API; aqui e a ultima garantia
+    // O DTO ja valida na entrada da API; aqui protege chamadas internas
     private static void exigirQuantidadePositiva(BigDecimal quantidade) {
         if (quantidade == null || quantidade.signum() <= 0) {
             throw new IllegalArgumentException("A quantidade deve ser maior que zero.");
         }
     }
 
-    // A coluna do banco guarda 3 casas decimais, entao 4 unidades vem como
-    // 4.000 e a mensagem fica estranha. Aqui tiramos os zeros do final.
+    // Remove zeros a direita para a mensagem: 4.000 -> 4, 10.500 -> 10.5
     private static String semZerosSobrando(BigDecimal valor) {
         BigDecimal limpo = valor.stripTrailingZeros();
         if (limpo.scale() < 0) {
@@ -147,13 +137,12 @@ public class Pastilha {
         return limpo.toPlainString();
     }
 
-    // Quanto de dinheiro esta parado nesta pastilha
+    // Valor imobilizado: saldo x custo unitario
     public BigDecimal getValorEmEstoque() {
         return saldoAtual.multiply(custoUnitario);
     }
 
-    // Nao apagamos a pastilha do banco, so marcamos como inativa,
-    // senao perderiamos as movimentacoes antigas dela
+    // Exclusao logica: preserva as movimentacoes que referenciam a pastilha
     public void inativar() {
         this.ativo = false;
     }

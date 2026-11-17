@@ -3,6 +3,6 @@ package br.com.ddametalurgica.estoque.repository;
 import br.com.ddametalurgica.estoque.domain.TipoMovimentacao;
 import java.math.BigDecimal;
 
-// Quanto entrou ou saiu de uma pastilha num periodo, ja somado pelo banco
+// Projecao: total de entrada ou saida de uma pastilha no periodo, somado no banco
 public record TotalMovimentado(Long pastilhaId, TipoMovimentacao tipo, BigDecimal quantidade) {
 }

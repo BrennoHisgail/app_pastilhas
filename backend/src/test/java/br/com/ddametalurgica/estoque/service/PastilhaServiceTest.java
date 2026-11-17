@@ -53,7 +53,7 @@ class PastilhaServiceTest {
     class Criar {
 
         @Test
-        @DisplayName("grava a pastilha quando o codigo ainda nao existe")
+        @DisplayName("grava a pastilha quando o código ainda não existe")
         void criaComCodigoNovo() {
             when(repository.existsByCodigoIgnoreCase("CNMG120408")).thenReturn(false);
             when(repository.save(any(Pastilha.class))).thenAnswer(chamada -> chamada.getArgument(0));
@@ -66,13 +66,13 @@ class PastilhaServiceTest {
         }
 
         @Test
-        @DisplayName("recusa codigo repetido, mesmo escrito em outra caixa")
+        @DisplayName("recusa código repetido, mesmo escrito em outra caixa")
         void recusaCodigoDuplicado() {
             when(repository.existsByCodigoIgnoreCase("cnmg120408")).thenReturn(true);
 
             assertThatThrownBy(() -> service.criar(Fabrica.requisicao("cnmg120408")))
                     .isInstanceOf(RegraNegocioException.class)
-                    .hasMessageContaining("Ja existe uma pastilha");
+                    .hasMessageContaining("Já existe uma pastilha");
 
             verify(repository, never()).save(any());
         }
@@ -95,7 +95,7 @@ class PastilhaServiceTest {
         }
 
         @Test
-        @DisplayName("a pastilha nova nasce sem saldo: saldo so entra por movimentacao")
+        @DisplayName("a pastilha nova nasce sem saldo: saldo só entra por movimentação")
         void nasceSemSaldo() {
             when(repository.existsByCodigoIgnoreCase(anyString())).thenReturn(false);
             when(repository.save(any(Pastilha.class))).thenAnswer(chamada -> chamada.getArgument(0));
@@ -112,7 +112,7 @@ class PastilhaServiceTest {
     class Atualizar {
 
         @Test
-        @DisplayName("deixa manter o proprio codigo sem reclamar de duplicidade")
+        @DisplayName("deixa manter o próprio código sem reclamar de duplicidade")
         void mantemOProprioCodigo() {
             Pastilha existente = Fabrica.comId(Fabrica.pastilha("CNMG120408"), 1L);
             when(repository.findById(1L)).thenReturn(Optional.of(existente));
@@ -125,7 +125,7 @@ class PastilhaServiceTest {
         }
 
         @Test
-        @DisplayName("recusa trocar para um codigo que ja e de outra pastilha")
+        @DisplayName("recusa trocar para um código que já e de outra pastilha")
         void recusaCodigoDeOutra() {
             Pastilha existente = Fabrica.comId(Fabrica.pastilha("CNMG120408"), 1L);
             when(repository.findById(1L)).thenReturn(Optional.of(existente));
@@ -139,7 +139,7 @@ class PastilhaServiceTest {
         }
 
         @Test
-        @DisplayName("editar o cadastro nao mexe no saldo")
+        @DisplayName("editar o cadastro não mexe no saldo")
         void naoMexeNoSaldo() {
             Pastilha existente = Fabrica.comId(
                     Fabrica.pastilha("CNMG120408", new BigDecimal("77"), new BigDecimal("20")), 1L);
@@ -152,7 +152,7 @@ class PastilhaServiceTest {
         }
 
         @Test
-        @DisplayName("devolve 404 quando o id nao existe")
+        @DisplayName("devolve 404 quando o id não existe")
         void idInexistente() {
             when(repository.findById(99L)).thenReturn(Optional.empty());
 
@@ -180,7 +180,7 @@ class PastilhaServiceTest {
         }
 
         @Test
-        @DisplayName("inativar uma pastilha ja inativa nao da erro nem grava de novo")
+        @DisplayName("inativar uma pastilha já inativa não da erro nem grava de novo")
         void inativarDuasVezesEIdempotente() {
             Pastilha existente = Fabrica.comId(Fabrica.pastilha("CNMG120408"), 1L);
             existente.inativar();
@@ -236,7 +236,7 @@ class PastilhaServiceTest {
         }
 
         @Test
-        @DisplayName("buscarPorId devolve 404 quando nao acha")
+        @DisplayName("buscarPorId devolve 404 quando não acha")
         void buscarPorIdInexistente() {
             when(repository.findById(42L)).thenReturn(Optional.empty());
 

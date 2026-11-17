@@ -13,8 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Classe com as regras do cadastro de pastilhas.
-// O controller nao acessa o repositorio direto, passa sempre por aqui.
+// Regras do cadastro de pastilhas
 @Service
 public class PastilhaService {
 
@@ -48,7 +47,7 @@ public class PastilhaService {
     @Transactional
     public PastilhaResponse criar(PastilhaRequest dados) {
         if (repository.existsByCodigoIgnoreCase(dados.codigo().trim())) {
-            throw new RegraNegocioException("Ja existe uma pastilha com o codigo " + dados.codigo() + ".");
+            throw new RegraNegocioException("Já existe uma pastilha com o código " + dados.codigo() + ".");
         }
         Pastilha pastilha = new Pastilha();
         aplicar(dados, pastilha);
@@ -62,7 +61,7 @@ public class PastilhaService {
 
         boolean codigoMudou = !pastilha.getCodigo().equalsIgnoreCase(novoCodigo);
         if (codigoMudou && repository.existsByCodigoIgnoreCase(novoCodigo)) {
-            throw new RegraNegocioException("Ja existe uma pastilha com o codigo " + novoCodigo + ".");
+            throw new RegraNegocioException("Já existe uma pastilha com o código " + novoCodigo + ".");
         }
 
         aplicar(dados, pastilha);
@@ -76,10 +75,8 @@ public class PastilhaService {
         return PastilhaResponse.de(repository.save(pastilha));
     }
 
-    // Inativa a pastilha em vez de apagar, porque existem
-    // movimentacoes no banco que apontam para ela.
-    // Inativar de novo uma pastilha ja inativa nao e erro: o DELETE do HTTP
-    // e idempotente, repetir o pedido deixa o recurso no mesmo estado.
+    // Exclusao logica, para preservar as movimentacoes da pastilha.
+    // Idempotente como o DELETE do HTTP: inativar de novo nao gera erro.
     @Transactional
     public void inativar(Long id) {
         Pastilha pastilha = obrigatoria(id);
@@ -97,7 +94,7 @@ public class PastilhaService {
         return PastilhaResponse.de(repository.save(pastilha));
     }
 
-    // Copia os dados que vieram da tela para o objeto da pastilha
+    // Copia os dados do request para a entidade
     private void aplicar(PastilhaRequest dados, Pastilha pastilha) {
         pastilha.setCodigo(dados.codigo().trim());
         pastilha.setDescricao(dados.descricao().trim());
@@ -109,13 +106,13 @@ public class PastilhaService {
         pastilha.setEstoqueSeguranca(dados.estoqueSeguranca());
     }
 
-    // Busca a pastilha e ja dispara o erro 404 se nao existir
+    // Busca por id ou lanca RecursoNaoEncontradoException (404)
     private Pastilha obrigatoria(Long id) {
         return repository.findById(id)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Pastilha " + id + " nao encontrada."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Pastilha " + id + " não encontrada."));
     }
 
-    // Troca null por string vazia, que e o que a consulta espera
+    // A consulta usa '' como "sem filtro"
     private String normalizar(String filtro) {
         return filtro == null ? "" : filtro.trim();
     }

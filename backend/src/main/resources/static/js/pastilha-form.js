@@ -30,8 +30,7 @@
         });
     }
 
-    // Pega os erros de validacao que o backend mandou
-    // e mostra a mensagem embaixo de cada campo
+    // Exibe os erros de validacao do backend abaixo de cada campo
     function marcarErrosDeCampo(erros) {
         Object.keys(erros || {}).forEach((campo) => {
             const span = document.querySelector('[data-erro="' + campo + '"]');
@@ -80,7 +79,7 @@
                 datalist.appendChild(opcao);
             });
         } catch (problema) {
-            // Se as categorias nao carregarem o formulario continua funcionando
+            // Falha nas sugestoes de categoria nao bloqueia o formulario
         }
     }
 

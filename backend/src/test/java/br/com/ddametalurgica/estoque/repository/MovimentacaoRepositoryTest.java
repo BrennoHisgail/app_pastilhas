@@ -22,7 +22,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@DisplayName("MovimentacaoRepository - consultas do historico e do painel")
+@DisplayName("MovimentacaoRepository - consultas do histórico e do painel")
 class MovimentacaoRepositoryTest {
 
     @Autowired
@@ -69,7 +69,7 @@ class MovimentacaoRepositoryTest {
     }
 
     @Test
-    @DisplayName("filtra pelas movimentacoes de uma pastilha so")
+    @DisplayName("filtra pelas movimentações de uma pastilha só")
     void filtraPorPastilha() {
         Page<Movimentacao> pagina = repository.buscar(
                 pastilhaA.getId(), LocalDateTime.now().minusYears(1), LocalDateTime.now(), primeiraPagina);
@@ -80,7 +80,7 @@ class MovimentacaoRepositoryTest {
     }
 
     @Test
-    @DisplayName("o historico vem da mais nova para a mais antiga")
+    @DisplayName("o histórico vem da mais nova para a mais antiga")
     void ordenaDaMaisNova() {
         Page<Movimentacao> pagina = repository.buscar(
                 0L, LocalDateTime.now().minusYears(1), LocalDateTime.now(), primeiraPagina);
@@ -90,7 +90,7 @@ class MovimentacaoRepositoryTest {
     }
 
     @Test
-    @DisplayName("o periodo corta o que ficou de fora das datas")
+    @DisplayName("o período corta o que ficou de fora das datas")
     void filtraPorPeriodo() {
         Page<Movimentacao> pagina = repository.buscar(
                 0L, LocalDateTime.now().minusDays(10), LocalDateTime.now(), primeiraPagina);
@@ -100,7 +100,7 @@ class MovimentacaoRepositoryTest {
     }
 
     @Test
-    @DisplayName("periodo sem nenhuma movimentacao devolve pagina vazia")
+    @DisplayName("período sem nenhuma movimentação devolve página vazia")
     void periodoVazio() {
         Page<Movimentacao> pagina = repository.buscar(
                 0L, LocalDateTime.now().minusYears(5), LocalDateTime.now().minusYears(4), primeiraPagina);
@@ -109,7 +109,7 @@ class MovimentacaoRepositoryTest {
     }
 
     @Test
-    @DisplayName("as ultimas movimentacoes do painel vem com a pastilha carregada junto")
+    @DisplayName("as últimas movimentações do painel vem com a pastilha carregada junto")
     void ultimasDoPainel() {
         var ultimas = repository.findTop8ByOrderByDataHoraDesc();
 
@@ -120,7 +120,7 @@ class MovimentacaoRepositoryTest {
     }
 
     @Test
-    @DisplayName("contarDesde conta so o que aconteceu dentro do periodo")
+    @DisplayName("contarDesde conta só o que aconteceu dentro do período")
     void contaDesde() {
         assertThat(repository.contarDesde(LocalDateTime.now().minusDays(30))).isEqualTo(3);
         assertThat(repository.contarDesde(LocalDateTime.now().minusDays(3))).isEqualTo(2);
@@ -128,7 +128,7 @@ class MovimentacaoRepositoryTest {
     }
 
     @Test
-    @DisplayName("a paginacao do historico funciona")
+    @DisplayName("a paginação do histórico funciona")
     void paginaOHistorico() {
         Page<Movimentacao> pagina = repository.buscar(
                 0L, LocalDateTime.now().minusYears(1), LocalDateTime.now(), PageRequest.of(1, 3));
@@ -138,7 +138,7 @@ class MovimentacaoRepositoryTest {
     }
 
     @Test
-    @DisplayName("a pastilha B tem so a movimentacao dela")
+    @DisplayName("a pastilha B tem só a movimentação dela")
     void movimentacoesDaOutraPastilha() {
         Page<Movimentacao> pagina = repository.buscar(
                 pastilhaB.getId(), LocalDateTime.now().minusYears(1), LocalDateTime.now(), primeiraPagina);

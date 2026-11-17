@@ -1,0 +1,1925 @@
+openapi: 3.1.0
+info:
+  contact:
+    name: Equipe Projeto Aplicado III - UniSENAI
+  description: |
+    MVP do sistema de controle de estoque da DDA Metalúrgica.
+
+    Projeto Aplicado III - ADS 4ª fase - UniSENAI.
+    Equipe: Brenno Meurer, Vinicius Barcellos, Pedro Ptelzi e Pedro Luis.
+
+    ## Autenticação
+    A API usa a sessão do login por formulário (`POST /login`), guardada no
+    cookie `JSESSIONID`. Sem sessão válida, as rotas de `/api` respondem **401**.
+
+    ## CSRF
+    Toda requisição que altera dados (POST, PUT, PATCH, DELETE) precisa enviar o
+    token CSRF no cabeçalho `X-CSRF-TOKEN`. As telas leem o token das tags
+    `<meta name="_csrf">` do layout. Sem o token, a resposta é **403**.
+
+    ## Perfis
+    - **OPERADOR**: consulta pastilhas, registra entradas e saídas, vê painel,
+      indicadores e relatórios.
+    - **ADMIN**: tudo do operador, mais cadastro de pastilhas e gestão de usuários.
+
+    Cada operação informa o perfil exigido na descrição.
+
+    ## Erros
+    Os erros seguem o formato ProblemDetail (RFC 7807). Erros de validação trazem
+    o campo `erros`, com a mensagem de cada campo.
+  title: API - Controle de Estoque de Pastilhas Industriais
+  version: 0.1.0
+servers:
+- url: /
+tags:
+- description: "Painel, alertas de reposição e indicadores de estoque"
+  name: Indicadores
+- description: "Entradas, saídas e histórico do estoque"
+  name: Movimentações
+- description: Cadastro e consulta das pastilhas
+  name: Pastilhas
+- description: Exportação do estoque e das movimentações em CSV
+  name: Relatórios
+- description: Gestão de usuários do sistema
+  name: Usuários
+paths:
+  /api/alertas/reposicao:
+    get:
+      description: |-
+        Pastilhas que chegaram no nível mínimo, as mais críticas primeiro.
+
+        **Perfil:** ADMIN ou OPERADOR
+      operationId: alertas
+      parameters:
+      - description: "Quantos itens trazer, de 1 a 200"
+        in: query
+        name: limite
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 50
+          maximum: 200
+          minimum: 1
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PastilhaResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Itens que precisam de reposição
+      tags:
+      - Indicadores
+  /api/dashboard/indicadores:
+    get:
+      description: |-
+        Itens cadastrados, itens em falta, valor em estoque e últimas movimentações.
+
+        **Perfil:** ADMIN ou OPERADOR
+      operationId: indicadores
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IndicadoresResponse"
+          description: OK
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Números do painel
+      tags:
+      - Indicadores
+  /api/indicadores/estoque:
+    get:
+      description: |-
+        Calcula os indicadores de cada pastilha ativa a partir das movimentações dos últimos N dias. A lista vem na ordem da Curva ABC.
+
+        **Perfil:** ADMIN ou OPERADOR
+      operationId: estoque_1
+      parameters:
+      - description: "Quantos dias para trás olhar, de 1 a 365"
+        in: query
+        name: dias
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 90
+          maximum: 365
+          minimum: 1
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/IndicadoresEstoqueResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: "Ponto de Pedido, Giro, Cobertura e Curva ABC"
+      tags:
+      - Indicadores
+  /api/movimentacoes:
+    get:
+      description: |-
+        Filtra por pastilha e por período, do mais novo para o mais antigo.
+
+        **Perfil:** ADMIN ou OPERADOR
+      operationId: historico
+      parameters:
+      - description: Filtra por pastilha; ausente traz todas
+        in: query
+        name: pastilhaId
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - description: Data inicial (aaaa-mm-dd)
+        in: query
+        name: de
+        required: false
+        schema:
+          type: string
+          format: date
+      - description: Data final (aaaa-mm-dd)
+        in: query
+        name: ate
+        required: false
+        schema:
+          type: string
+          format: date
+      - description: Zero-based page index (0..N)
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - description: The size of the page to be returned
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        in: query
+        name: sort
+        required: false
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageMovimentacaoResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Consulta o histórico
+      tags:
+      - Movimentações
+  /api/movimentacoes/entrada:
+    post:
+      description: |-
+        Soma a quantidade no saldo da pastilha.
+
+        **Perfil:** ADMIN ou OPERADOR
+      operationId: entrada
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovimentacaoRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MovimentacaoResponse"
+          description: Entrada registrada
+          headers:
+            Location:
+              description: Endereço do registro criado
+              style: simple
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Pastilha não encontrada
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Pastilha inativa
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Registra uma entrada
+      tags:
+      - Movimentações
+  /api/movimentacoes/saida:
+    post:
+      description: |-
+        Subtrai do saldo. Se não houver estoque suficiente, devolve erro.
+
+        **Perfil:** ADMIN ou OPERADOR
+      operationId: saida
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovimentacaoRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MovimentacaoResponse"
+          description: Saída registrada
+          headers:
+            Location:
+              description: Endereço do registro criado
+              style: simple
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Pastilha não encontrada
+        "422":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Saldo insuficiente ou pastilha inativa
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Registra uma saída
+      tags:
+      - Movimentações
+  /api/movimentacoes/{id}:
+    get:
+      description: |-
+        É o endereço devolvido no cabeçalho Location ao registrar entrada ou saída.
+
+        **Perfil:** ADMIN ou OPERADOR
+      operationId: buscarPorId_2
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MovimentacaoResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Busca uma movimentação pelo id
+      tags:
+      - Movimentações
+  /api/pastilhas:
+    get:
+      description: '**Perfil:** ADMIN ou OPERADOR'
+      operationId: listar_1
+      parameters:
+      - description: Trecho do código ou da descrição
+        in: query
+        name: busca
+        required: false
+        schema:
+          type: string
+      - description: Categoria exata
+        in: query
+        name: categoria
+        required: false
+        schema:
+          type: string
+      - description: false lista as pastilhas inativadas
+        in: query
+        name: ativo
+        required: false
+        schema:
+          type: boolean
+          default: true
+      - description: true traz só os itens que precisam de reposição
+        in: query
+        name: abaixoDoMinimo
+        required: false
+        schema:
+          type: boolean
+          default: false
+      - description: Zero-based page index (0..N)
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - description: The size of the page to be returned
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        in: query
+        name: sort
+        required: false
+        schema:
+          type: array
+          default:
+          - "codigo,ASC"
+          items:
+            type: string
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PagePastilhaResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Lista as pastilhas com filtros e paginação
+      tags:
+      - Pastilhas
+    post:
+      description: |-
+        O saldo não é informado no cadastro: ele entra por uma movimentação de entrada.
+
+        **Perfil:** ADMIN
+      operationId: criar_1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PastilhaRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastilhaResponse"
+          description: Pastilha criada
+          headers:
+            Location:
+              description: Endereço do registro criado
+              style: simple
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Já existe uma pastilha com o código informado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Cadastra uma pastilha nova
+      tags:
+      - Pastilhas
+  /api/pastilhas/categorias:
+    get:
+      description: '**Perfil:** ADMIN ou OPERADOR'
+      operationId: listarCategorias
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                type: array
+                items:
+                  type: string
+          description: OK
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Lista as categorias cadastradas
+      tags:
+      - Pastilhas
+  /api/pastilhas/{id}:
+    delete:
+      description: |-
+        Não apaga do banco, só marca como inativa para não perder o histórico.
+
+        **Perfil:** ADMIN
+      operationId: inativar_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Pastilha inativada (repetir o pedido também devolve 204)
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Inativa a pastilha
+      tags:
+      - Pastilhas
+    get:
+      description: '**Perfil:** ADMIN ou OPERADOR'
+      operationId: buscarPorId_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastilhaResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Busca uma pastilha pelo id
+      tags:
+      - Pastilhas
+    put:
+      description: '**Perfil:** ADMIN'
+      operationId: atualizar_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PastilhaRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastilhaResponse"
+          description: Pastilha alterada
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Código já usado por outra pastilha, ou alteração simultânea"
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Altera os dados de uma pastilha
+      tags:
+      - Pastilhas
+  /api/pastilhas/{id}/nivel-minimo:
+    patch:
+      description: '**Perfil:** ADMIN'
+      operationId: alterarNivelMinimo
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NivelMinimoRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastilhaResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Altera só o nível mínimo da pastilha
+      tags:
+      - Pastilhas
+  /api/pastilhas/{id}/reativar:
+    patch:
+      description: '**Perfil:** ADMIN'
+      operationId: reativar_1
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PastilhaResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Volta a pastilha para ativa
+      tags:
+      - Pastilhas
+  /api/relatorios/estoque.csv:
+    get:
+      description: |-
+        Todas as pastilhas ativas com saldo e valor.
+
+        **Perfil:** ADMIN ou OPERADOR
+      operationId: estoque
+      responses:
+        "200":
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          description: Arquivo CSV (separador ;)
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Posição do estoque em CSV
+      tags:
+      - Relatórios
+  /api/relatorios/movimentacoes.csv:
+    get:
+      description: |-
+        Mesmos filtros do histórico, sem paginação.
+
+        **Perfil:** ADMIN ou OPERADOR
+      operationId: movimentacoes
+      parameters:
+      - description: Filtra por pastilha; ausente traz todas
+        in: query
+        name: pastilhaId
+        required: false
+        schema:
+          type: integer
+          format: int64
+      - description: Data inicial (aaaa-mm-dd)
+        in: query
+        name: de
+        required: false
+        schema:
+          type: string
+          format: date
+      - description: Data final (aaaa-mm-dd)
+        in: query
+        name: ate
+        required: false
+        schema:
+          type: string
+          format: date
+      responses:
+        "200":
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+          description: Arquivo CSV (separador ;)
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Movimentações em CSV
+      tags:
+      - Relatórios
+  /api/usuarios:
+    get:
+      description: '**Perfil:** ADMIN'
+      operationId: listar
+      parameters:
+      - description: Trecho do nome ou do e-mail
+        in: query
+        name: busca
+        required: false
+        schema:
+          type: string
+      - description: false lista os usuários inativados
+        in: query
+        name: ativo
+        required: false
+        schema:
+          type: boolean
+          default: true
+      - description: Zero-based page index (0..N)
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - description: The size of the page to be returned
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          default: 20
+          minimum: 1
+      - description: "Sorting criteria in the format: property,(asc|desc). Default\
+          \ sort order is ascending. Multiple sort criteria are supported."
+        in: query
+        name: sort
+        required: false
+        schema:
+          type: array
+          default:
+          - "nome,ASC"
+          items:
+            type: string
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/PageUsuarioResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Lista os usuários com filtro e paginação
+      tags:
+      - Usuários
+    post:
+      description: '**Perfil:** ADMIN'
+      operationId: criar
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsuarioCreateRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioResponse"
+          description: Usuário criado
+          headers:
+            Location:
+              description: Endereço do registro criado
+              style: simple
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Já existe um usuário com o e-mail informado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Cadastra um usuário novo
+      tags:
+      - Usuários
+  /api/usuarios/{id}:
+    delete:
+      description: |-
+        Não apaga do banco, só marca como inativo para não perder o histórico.
+
+        **Perfil:** ADMIN
+      operationId: inativar
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "204":
+          description: Usuário inativado (repetir o pedido também devolve 204)
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "409":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Inativar o próprio usuário ou o último administrador ativo
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Inativa o usuário
+      tags:
+      - Usuários
+    get:
+      description: '**Perfil:** ADMIN'
+      operationId: buscarPorId
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - sessao: []
+      summary: Busca um usuário pelo id
+      tags:
+      - Usuários
+    put:
+      description: '**Perfil:** ADMIN'
+      operationId: atualizar
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UsuarioUpdateRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Altera o nome e o perfil de um usuário
+      tags:
+      - Usuários
+  /api/usuarios/{id}/reativar:
+    patch:
+      description: '**Perfil:** ADMIN'
+      operationId: reativar
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      responses:
+        "200":
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/UsuarioResponse"
+          description: OK
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Volta o usuário para ativo
+      tags:
+      - Usuários
+  /api/usuarios/{id}/senha:
+    patch:
+      description: '**Perfil:** ADMIN'
+      operationId: alterarSenha
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+          format: int64
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlterarSenhaRequest"
+        required: true
+      responses:
+        "204":
+          description: Senha alterada
+        "400":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: "Dados inválidos (corpo, parâmetro ou validação)"
+        "401":
+          description: "Sem sessão: faça login em POST /login"
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Perfil sem permissão ou token CSRF ausente
+        "404":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Registro não encontrado
+        "500":
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetail"
+          description: Erro inesperado no servidor
+      security:
+      - csrf: []
+        sessao: []
+      summary: Redefine a senha de um usuário
+      tags:
+      - Usuários
+  /login:
+    post:
+      description: "Cria a sessão (cookie JSESSIONID). Endpoint do Spring Security,\
+        \ usado pela tela de login."
+      operationId: login
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                _csrf:
+                  type: string
+                  description: Token CSRF da página de login
+                password:
+                  type: string
+                  format: password
+                  description: Senha
+                username:
+                  type: string
+                  description: E-mail do usuário
+                  example: admin@dda.com.br
+              required:
+              - username
+              - password
+              - _csrf
+        required: true
+      responses:
+        "302":
+          description: "Sucesso: redireciona para /. Falha: redireciona para /login?erro=true"
+          headers:
+            Location:
+              schema:
+                type: string
+      summary: Login por formulário
+      tags:
+      - Autenticação
+  /logout:
+    post:
+      description: Encerra a sessão e apaga o cookie JSESSIONID.
+      operationId: logout
+      responses:
+        "302":
+          description: Redireciona para /login?saiu=true
+          headers:
+            Location:
+              schema:
+                type: string
+      security:
+      - csrf: []
+        sessao: []
+      summary: Logout
+      tags:
+      - Autenticação
+components:
+  schemas:
+    AlterarSenhaRequest:
+      type: object
+      description: Nova senha do usuário
+      properties:
+        novaSenha:
+          type: string
+          example: novaSenha123
+          maxLength: 2147483647
+          minLength: 8
+      required:
+      - novaSenha
+    IndicadorPastilhaResponse:
+      type: object
+      properties:
+        abaixoDoPontoDePedido:
+          type: boolean
+        classeAbc:
+          type: string
+          enum:
+          - A
+          - B
+          - C
+        coberturaDias:
+          type: number
+        codigo:
+          type: string
+        consumoMedioDiario:
+          type: number
+        consumoPeriodo:
+          type: number
+        descricao:
+          type: string
+        giro:
+          type: number
+        id:
+          type: integer
+          format: int64
+        percentualAcumulado:
+          type: number
+        pontoDePedido:
+          type: number
+        saldoAtual:
+          type: number
+        unidadeMedida:
+          type: string
+          enum:
+          - UN
+          - PC
+          - CX
+          - KG
+          - M
+        valorConsumido:
+          type: number
+    IndicadoresEstoqueResponse:
+      type: object
+      properties:
+        abaixoDoPontoDePedido:
+          type: integer
+          format: int64
+        classeA:
+          type: integer
+          format: int64
+        classeB:
+          type: integer
+          format: int64
+        classeC:
+          type: integer
+          format: int64
+        dias:
+          type: integer
+          format: int32
+        itens:
+          type: array
+          items:
+            $ref: "#/components/schemas/IndicadorPastilhaResponse"
+    IndicadoresResponse:
+      type: object
+      properties:
+        alertasReposicao:
+          type: array
+          items:
+            $ref: "#/components/schemas/PastilhaResponse"
+        categorias:
+          type: integer
+          format: int64
+        itensAbaixoDoMinimo:
+          type: integer
+          format: int64
+        itensCadastrados:
+          type: integer
+          format: int64
+        movimentacoesRecentes:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovimentacaoResponse"
+        movimentacoesUltimos30Dias:
+          type: integer
+          format: int64
+        valorEmEstoque:
+          type: number
+    MovimentacaoRequest:
+      type: object
+      description: Dados de uma movimentação de estoque
+      properties:
+        documento:
+          type: string
+          description: "Nota fiscal, ordem de produção ou requisição"
+          example: NF 12345
+          maxLength: 60
+          minLength: 0
+        observacao:
+          type: string
+          maxLength: 400
+          minLength: 0
+        origemDestino:
+          type: string
+          description: "Fornecedor na entrada, setor ou ordem na saída"
+          example: Fornecedor Sandvik
+          maxLength: 160
+          minLength: 0
+        pastilhaId:
+          type: integer
+          format: int64
+          example: 1
+        quantidade:
+          type: number
+          example: 25
+      required:
+      - pastilhaId
+      - quantidade
+    MovimentacaoResponse:
+      type: object
+      properties:
+        dataHora:
+          type: string
+          format: date-time
+        documento:
+          type: string
+        id:
+          type: integer
+          format: int64
+        observacao:
+          type: string
+        origemDestino:
+          type: string
+        pastilhaCodigo:
+          type: string
+        pastilhaDescricao:
+          type: string
+        pastilhaId:
+          type: integer
+          format: int64
+        quantidade:
+          type: number
+        saldoApos:
+          type: number
+        tipo:
+          type: string
+          enum:
+          - ENTRADA
+          - SAIDA
+          - AJUSTE
+        usuarioNome:
+          type: string
+    NivelMinimoRequest:
+      type: object
+      properties:
+        nivelMinimo:
+          type: number
+      required:
+      - nivelMinimo
+    PageMovimentacaoResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/MovimentacaoResponse"
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    PagePastilhaResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/PastilhaResponse"
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    PageUsuarioResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/UsuarioResponse"
+        empty:
+          type: boolean
+        first:
+          type: boolean
+        last:
+          type: boolean
+        number:
+          type: integer
+          format: int32
+        numberOfElements:
+          type: integer
+          format: int32
+        pageable:
+          $ref: "#/components/schemas/PageableObject"
+        size:
+          type: integer
+          format: int32
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+          format: int32
+    PageableObject:
+      type: object
+      properties:
+        offset:
+          type: integer
+          format: int64
+        pageNumber:
+          type: integer
+          format: int32
+        pageSize:
+          type: integer
+          format: int32
+        paged:
+          type: boolean
+        sort:
+          $ref: "#/components/schemas/SortObject"
+        unpaged:
+          type: boolean
+    PastilhaRequest:
+      type: object
+      description: Dados de cadastro/edição de uma pastilha
+      properties:
+        categoria:
+          type: string
+          example: Torneamento
+          maxLength: 80
+          minLength: 0
+        codigo:
+          type: string
+          example: CNMG120408
+          maxLength: 40
+          minLength: 0
+        custoUnitario:
+          type: number
+          example: 38.9
+        descricao:
+          type: string
+          example: Pastilha de torneamento CNMG 120408 metal duro
+          maxLength: 200
+          minLength: 0
+        estoqueSeguranca:
+          type: number
+          description: Reserva técnica (Qs do Ponto de Pedido)
+          example: 20
+        leadTimeDias:
+          type: integer
+          format: int32
+          description: Tempo de reposição em dias (t do Ponto de Pedido)
+          example: 10
+        nivelMinimo:
+          type: number
+          description: Saldo a partir do qual o item entra na lista de reposição
+          example: 50
+        unidadeMedida:
+          type: string
+          enum:
+          - UN
+          - PC
+          - CX
+          - KG
+          - M
+          example: UN
+      required:
+      - categoria
+      - codigo
+      - custoUnitario
+      - descricao
+      - estoqueSeguranca
+      - leadTimeDias
+      - nivelMinimo
+      - unidadeMedida
+    PastilhaResponse:
+      type: object
+      properties:
+        abaixoDoMinimo:
+          type: boolean
+        ativo:
+          type: boolean
+        atualizadoEm:
+          type: string
+          format: date-time
+        categoria:
+          type: string
+        codigo:
+          type: string
+        criadoEm:
+          type: string
+          format: date-time
+        custoUnitario:
+          type: number
+        descricao:
+          type: string
+        estoqueSeguranca:
+          type: number
+        id:
+          type: integer
+          format: int64
+        leadTimeDias:
+          type: integer
+          format: int32
+        nivelMinimo:
+          type: number
+        saldoAtual:
+          type: number
+        unidadeMedida:
+          type: string
+          enum:
+          - UN
+          - PC
+          - CX
+          - KG
+          - M
+        valorEmEstoque:
+          type: number
+    ProblemDetail:
+      type: object
+      description: Erro no formato RFC 7807
+      properties:
+        detail:
+          type: string
+          example: "Saldo insuficiente: a pastilha CNMG120408 tem 10 UN em estoque,\
+            \ e a saída pede 25."
+        erros:
+          type: object
+          additionalProperties:
+            type: string
+          description: "Só em erros de validação: mensagem por campo"
+          example:
+            quantidade: A quantidade deve ser maior que zero
+        instance:
+          type: string
+          example: /api/movimentacoes/saida
+        status:
+          type: integer
+          format: int32
+          example: 422
+        title:
+          type: string
+          example: Operação não permitida
+        type:
+          type: string
+          example: about:blank
+    SortObject:
+      type: object
+      properties:
+        empty:
+          type: boolean
+        sorted:
+          type: boolean
+        unsorted:
+          type: boolean
+    UsuarioCreateRequest:
+      type: object
+      description: Dados de cadastro de um usuário
+      properties:
+        email:
+          type: string
+          format: email
+          example: fulana@dda.com.br
+          maxLength: 160
+          minLength: 0
+        nome:
+          type: string
+          example: Fulana da Silva
+          maxLength: 120
+          minLength: 0
+        perfil:
+          type: string
+          enum:
+          - ADMIN
+          - OPERADOR
+          example: OPERADOR
+        senha:
+          type: string
+          example: senha123
+          maxLength: 2147483647
+          minLength: 8
+      required:
+      - email
+      - nome
+      - perfil
+      - senha
+    UsuarioResponse:
+      type: object
+      properties:
+        ativo:
+          type: boolean
+        atualizadoEm:
+          type: string
+          format: date-time
+        criadoEm:
+          type: string
+          format: date-time
+        email:
+          type: string
+        id:
+          type: integer
+          format: int64
+        nome:
+          type: string
+        perfil:
+          type: string
+          enum:
+          - ADMIN
+          - OPERADOR
+    UsuarioUpdateRequest:
+      type: object
+      description: Dados de edição de um usuário
+      properties:
+        nome:
+          type: string
+          example: Fulana da Silva
+          maxLength: 120
+          minLength: 0
+        perfil:
+          type: string
+          enum:
+          - ADMIN
+          - OPERADOR
+          example: OPERADOR
+      required:
+      - nome
+      - perfil
+  securitySchemes:
+    csrf:
+      description: "Token CSRF, obrigatório em POST, PUT, PATCH e DELETE"
+      in: header
+      name: X-CSRF-TOKEN
+      type: apiKey
+    sessao:
+      description: Cookie de sessão criado pelo POST /login
+      in: cookie
+      name: JSESSIONID
+      type: apiKey

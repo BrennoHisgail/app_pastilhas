@@ -11,22 +11,19 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-// Repositorio da pastilha. O JpaRepository ja traz save, findById,
-// findAll e delete prontos, entao aqui so escrevemos as consultas nossas.
+// Consultas de pastilha. O CRUD basico vem do JpaRepository.
 public interface PastilhaRepository extends JpaRepository<Pastilha, Long> {
 
-    // Usado para nao deixar cadastrar dois codigos iguais
+    // Validacao de codigo unico no cadastro e na edicao
     boolean existsByCodigoIgnoreCase(String codigo);
 
-    // Busca a pastilha travando a linha no banco (SELECT ... FOR UPDATE).
-    // Usado na movimentacao: se duas saidas chegarem juntas, a segunda
-    // espera a primeira terminar e ja le o saldo atualizado.
+    // Lock pessimista (SELECT ... FOR UPDATE) usado na movimentacao: com duas
+    // saidas simultaneas, a segunda espera a primeira e le o saldo ja atualizado.
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Pastilha p WHERE p.id = :id")
     Optional<Pastilha> buscarParaMovimentar(@Param("id") Long id);
 
-    // Consulta da tela de pesquisa. Quando o filtro vem vazio ele nao
-    // filtra nada, por isso a comparacao com '' no comeco de cada linha.
+    // Pesquisa do catalogo. Filtro vazio ('') desativa a condicao correspondente.
     @Query("SELECT p FROM Pastilha p "
             + "WHERE (:busca = '' "
             + "       OR LOWER(p.codigo) LIKE LOWER(CONCAT('%', :busca, '%')) "
@@ -40,7 +37,7 @@ public interface PastilhaRepository extends JpaRepository<Pastilha, Long> {
                           @Param("somenteAbaixoDoMinimo") boolean somenteAbaixoDoMinimo,
                           Pageable pageable);
 
-    // Preenche o combo de categorias da tela de consulta
+    // Categorias distintas das pastilhas ativas (filtro da tela de consulta)
     @Query("SELECT DISTINCT p.categoria FROM Pastilha p WHERE p.ativo = TRUE ORDER BY p.categoria")
     List<String> listarCategorias();
 
@@ -54,10 +51,10 @@ public interface PastilhaRepository extends JpaRepository<Pastilha, Long> {
             + "FROM Pastilha p WHERE p.ativo = TRUE")
     ResumoPastilhas buscarResumo();
 
-    // Todas as pastilhas ativas, usado nos indicadores e no relatorio
+    // Pastilhas ativas, base dos indicadores e do relatorio CSV
     List<Pastilha> findByAtivoTrueOrderByCodigoAsc();
 
-    // Lista os itens que precisam de reposicao, os mais criticos primeiro
+    // Itens no nivel minimo ou abaixo, ordenados pela maior falta
     @Query("SELECT p FROM Pastilha p "
             + "WHERE p.ativo = TRUE AND p.saldoAtual <= p.nivelMinimo "
             + "ORDER BY (p.nivelMinimo - p.saldoAtual) DESC, p.codigo ASC")

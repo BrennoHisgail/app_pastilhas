@@ -18,11 +18,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-/**
- * Testa as consultas escritas na mao do PastilhaRepository contra um
- * banco de verdade (H2 em memoria). Um erro de digitacao no JPQL so
- * aparece quando a consulta roda, por isso estes testes existem.
- */
+// Testa as consultas escritas na mao do PastilhaRepository contra um
+// banco de verdade (H2 em memoria). Um erro de digitacao no JPQL so
+// aparece quando a consulta roda, por isso estes testes existem.
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DisplayName("PastilhaRepository - consultas do cadastro e do painel")
@@ -77,7 +75,7 @@ class PastilhaRepositoryTest {
     }
 
     @Test
-    @DisplayName("ativo=false lista so as inativadas")
+    @DisplayName("ativo=false lista só as inativadas")
     void listaInativas() {
         Page<Pastilha> pagina = repository.buscar("", "", false, false, primeiraPagina);
 
@@ -85,42 +83,42 @@ class PastilhaRepositoryTest {
     }
 
     @Test
-    @DisplayName("busca acha por trecho do codigo, sem diferenciar maiuscula de minuscula")
+    @DisplayName("busca acha por trecho do código, sem diferenciar maiuscula de minuscula")
     void buscaPorCodigo() {
         assertThat(repository.buscar("cnmg", "", true, false, primeiraPagina).getContent())
                 .extracting(Pastilha::getCodigo).containsExactly("CNMG120408");
     }
 
     @Test
-    @DisplayName("busca tambem acha por trecho da descricao")
+    @DisplayName("busca também acha por trecho da descrição")
     void buscaPorDescricao() {
         assertThat(repository.buscar("revestida", "", true, false, primeiraPagina).getContent())
                 .extracting(Pastilha::getCodigo).containsExactly("WNMG080408");
     }
 
     @Test
-    @DisplayName("filtro de categoria traz so a categoria escolhida")
+    @DisplayName("filtro de categoria traz só a categoria escolhida")
     void filtraPorCategoria() {
         assertThat(repository.buscar("", "Torneamento", true, false, primeiraPagina).getContent())
                 .extracting(Pastilha::getCodigo).containsExactly("CNMG120408", "WNMG080408");
     }
 
     @Test
-    @DisplayName("filtro de reposicao traz as que chegaram no nivel minimo, inclusive as iguais")
+    @DisplayName("filtro de reposição traz as que chegaram no nível mínimo, inclusive as iguais")
     void filtraAbaixoDoMinimo() {
         assertThat(repository.buscar("", "", true, true, primeiraPagina).getContent())
                 .extracting(Pastilha::getCodigo).containsExactly("APKT1604", "WNMG080408");
     }
 
     @Test
-    @DisplayName("os filtros se somam: categoria mais reposicao")
+    @DisplayName("os filtros se somam: categoria mais reposição")
     void combinaFiltros() {
         assertThat(repository.buscar("", "Torneamento", true, true, primeiraPagina).getContent())
                 .extracting(Pastilha::getCodigo).containsExactly("WNMG080408");
     }
 
     @Test
-    @DisplayName("a paginacao respeita o tamanho da pagina e conta o total")
+    @DisplayName("a paginação respeita o tamanho da página e conta o total")
     void pagina() {
         Page<Pastilha> pagina = repository.buscar("", "", true, false, PageRequest.of(0, 2, Sort.by("codigo")));
 
@@ -130,7 +128,7 @@ class PastilhaRepositoryTest {
     }
 
     @Test
-    @DisplayName("codigo duplicado e detectado ignorando a caixa das letras")
+    @DisplayName("código duplicado e detectado ignorando a caixa das letras")
     void detectaCodigoDuplicado() {
         assertThat(repository.existsByCodigoIgnoreCase("cnmg120408")).isTrue();
         assertThat(repository.existsByCodigoIgnoreCase("NAO_EXISTE")).isFalse();
@@ -157,7 +155,7 @@ class PastilhaRepositoryTest {
     }
 
     @Test
-    @DisplayName("com o banco vazio o resumo vem zerado, nao nulo")
+    @DisplayName("com o banco vazio o resumo vem zerado, não nulo")
     void resumoComBancoVazio() {
         repository.deleteAll();
         em.flush();
@@ -170,7 +168,7 @@ class PastilhaRepositoryTest {
     }
 
     @Test
-    @DisplayName("a lista de reposicao vem com a mais critica primeiro")
+    @DisplayName("a lista de reposição vem com a mais critica primeiro")
     void listaReposicaoOrdenadaPelaFalta() {
         // WNMG080408 falta 15 (20-5); APKT1604 falta 0 (30-30)
         List<Pastilha> criticas = repository.listarAbaixoDoMinimo(PageRequest.of(0, 10));
@@ -179,7 +177,7 @@ class PastilhaRepositoryTest {
     }
 
     @Test
-    @DisplayName("a lista de reposicao respeita o limite pedido")
+    @DisplayName("a lista de reposição respeita o limite pedido")
     void listaReposicaoRespeitaOLimite() {
         assertThat(repository.listarAbaixoDoMinimo(PageRequest.of(0, 1)))
                 .extracting(Pastilha::getCodigo)

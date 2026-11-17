@@ -17,12 +17,10 @@ import org.springframework.security.test.context.support.WithAnonymousUser;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
-/**
- * Confere que cada rota das telas aponta para o HTML certo. Como as
- * paginas buscam os dados pela API, nao ha nada mais para testar aqui.
- *
- * Roda como ADMIN porque cadastro e edicao de pastilha sao so desse perfil.
- */
+// Confere que cada rota das telas aponta para o HTML certo. Como as
+// paginas buscam os dados pela API, nao ha nada mais para testar aqui.
+//
+// Roda como ADMIN porque cadastro e edicao de pastilha sao so desse perfil.
 @WebMvcTest(PaginaController.class)
 @Import(SecurityConfig.class)
 @WithMockUser(roles = "ADMIN")
@@ -119,7 +117,7 @@ class PaginaControllerTest {
     }
 
     @Test
-    @DisplayName("OPERADOR nao abre as telas de usuario nem o cadastro de pastilha")
+    @DisplayName("OPERADOR não abre as telas de usuário nem o cadastro de pastilha")
     @WithMockUser(roles = "OPERADOR")
     void operadorNaoAbreTelasDeAdmin() throws Exception {
         mvc.perform(get("/usuarios")).andExpect(status().isForbidden());

@@ -13,12 +13,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-// Controller dos indicadores de estoque: Ponto de Pedido, Giro,
-// Cobertura e Curva ABC
+// Endpoint dos indicadores de estoque: Ponto de Pedido, Giro, Cobertura e Curva ABC
 @RestController
 @RequestMapping("/api/indicadores")
 @Validated
-@Tag(name = "Indicadores", description = "Numeros do painel inicial")
+@Tag(name = "Indicadores", description = "Painel, alertas de reposição e indicadores de estoque")
 public class IndicadorController {
 
     private final IndicadorService service;
@@ -29,13 +28,13 @@ public class IndicadorController {
 
     @GetMapping("/estoque")
     @Operation(summary = "Ponto de Pedido, Giro, Cobertura e Curva ABC",
-            description = "Calcula os indicadores de cada pastilha ativa a partir das movimentacoes "
-                    + "dos ultimos N dias. A lista vem na ordem da Curva ABC.")
+            description = "Calcula os indicadores de cada pastilha ativa a partir das movimentações "
+                    + "dos últimos N dias. A lista vem na ordem da Curva ABC.")
     public IndicadoresEstoqueResponse estoque(
-            @Parameter(description = "Quantos dias para tras olhar, de 1 a 365")
+            @Parameter(description = "Quantos dias para trás olhar, de 1 a 365")
             @RequestParam(defaultValue = "90")
-            @Min(value = 1, message = "O periodo deve ter no minimo 1 dia")
-            @Max(value = 365, message = "O periodo deve ter no maximo 365 dias") int dias) {
+            @Min(value = 1, message = "O período deve ter no mínimo 1 dia")
+            @Max(value = 365, message = "O período deve ter no máximo 365 dias") int dias) {
         return service.calcular(dias);
     }
 }

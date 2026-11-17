@@ -39,7 +39,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(MovimentacaoController.class)
 @Import({SecurityConfig.class, ApiExceptionHandler.class})
-@DisplayName("MovimentacaoController - contrato HTTP das entradas e saidas")
+@DisplayName("MovimentacaoController - contrato HTTP das entradas e saídas")
 @WithMockUser(roles = "OPERADOR")
 class MovimentacaoControllerTest {
 
@@ -87,24 +87,24 @@ class MovimentacaoControllerTest {
     }
 
     @Test
-    @DisplayName("saida sem saldo devolve 422 com a mensagem para o usuario")
+    @DisplayName("saída sem saldo devolve 422 com a mensagem para o usuário")
     void saldoInsuficiente() throws Exception {
         when(service.registrarSaida(any())).thenThrow(new OperacaoNaoPermitidaException(
-                "Saldo insuficiente: a pastilha CNMG120408 tem 10 UN em estoque, e a saida pede 25."));
+                "Saldo insuficiente: a pastilha CNMG120408 tem 10 UN em estoque, e a saída pede 25."));
 
         mvc.perform(post("/api/movimentacoes/saida").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(CORPO_VALIDO))
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.title").value("Operacao nao permitida"))
+                .andExpect(jsonPath("$.title").value("Operação não permitida"))
                 .andExpect(jsonPath("$.detail").value(
                         org.hamcrest.Matchers.containsString("Saldo insuficiente")));
     }
 
     @Test
-    @DisplayName("movimentacao em pastilha inexistente devolve 404")
+    @DisplayName("movimentação em pastilha inexistente devolve 404")
     void pastilhaInexistente() throws Exception {
         when(service.registrarEntrada(any()))
-                .thenThrow(new RecursoNaoEncontradoException("Pastilha 1 nao encontrada."));
+                .thenThrow(new RecursoNaoEncontradoException("Pastilha 1 não encontrada."));
 
         mvc.perform(post("/api/movimentacoes/entrada").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(CORPO_VALIDO))
@@ -126,7 +126,7 @@ class MovimentacaoControllerTest {
     }
 
     @Test
-    @DisplayName("requisicao sem pastilha e sem quantidade devolve 400 apontando os dois campos")
+    @DisplayName("requisição sem pastilha e sem quantidade devolve 400 apontando os dois campos")
     void recusaCamposObrigatorios() throws Exception {
         mvc.perform(post("/api/movimentacoes/saida").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
@@ -174,26 +174,26 @@ class MovimentacaoControllerTest {
     }
 
     @Test
-    @DisplayName("data em formato errado devolve 400, nao 500")
+    @DisplayName("data em formato errado devolve 400, não 500")
     void recusaDataInvalida() throws Exception {
         mvc.perform(get("/api/movimentacoes").param("de", "31/01/2026"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.title").value("Dados invalidos"));
+                .andExpect(jsonPath("$.title").value("Dados inválidos"));
     }
 
     @Test
-    @DisplayName("periodo invertido devolve 400 com a mensagem do service")
+    @DisplayName("período invertido devolve 400 com a mensagem do service")
     void periodoInvertido() throws Exception {
         when(service.historico(any(), any(), any(), any()))
-                .thenThrow(new DadosInvalidosException("A data inicial nao pode ser posterior a data final."));
+                .thenThrow(new DadosInvalidosException("A data inicial não pode ser posterior à data final."));
 
         mvc.perform(get("/api/movimentacoes").param("de", "2026-03-01").param("ate", "2026-02-01"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.detail").value("A data inicial nao pode ser posterior a data final."));
+                .andExpect(jsonPath("$.detail").value("A data inicial não pode ser posterior à data final."));
     }
 
     @Test
-    @DisplayName("GET /{id} devolve a movimentacao apontada pelo Location")
+    @DisplayName("GET /{id} devolve a movimentação apontada pelo Location")
     void buscaPorId() throws Exception {
         when(service.buscarPorId(10L)).thenReturn(resposta(TipoMovimentacao.ENTRADA, "125"));
 
@@ -206,11 +206,11 @@ class MovimentacaoControllerTest {
     @Test
     @DisplayName("GET /{id} inexistente devolve 404")
     void buscaPorIdInexistente() throws Exception {
-        when(service.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Movimentacao 99 nao encontrada."));
+        when(service.buscarPorId(99L)).thenThrow(new RecursoNaoEncontradoException("Movimentação 99 não encontrada."));
 
         mvc.perform(get("/api/movimentacoes/99"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.detail").value("Movimentacao 99 nao encontrada."));
+                .andExpect(jsonPath("$.detail").value("Movimentação 99 não encontrada."));
     }
 
     @Test
@@ -226,7 +226,7 @@ class MovimentacaoControllerTest {
     }
 
     @Test
-    @DisplayName("metodo HTTP nao suportado devolve 405")
+    @DisplayName("metodo HTTP não suportado devolve 405")
     void metodoNaoSuportado() throws Exception {
         mvc.perform(put("/api/movimentacoes/10").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(CORPO_VALIDO))

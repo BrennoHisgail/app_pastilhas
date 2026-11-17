@@ -17,13 +17,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-/**
- * Testa as consultas escritas na mao do UsuarioRepository contra um
- * banco de verdade (H2 em memoria).
- */
+// Testa as consultas escritas na mao do UsuarioRepository contra um
+// banco de verdade (H2 em memoria).
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@DisplayName("UsuarioRepository - consultas da gestao de usuarios")
+@DisplayName("UsuarioRepository - consultas da gestão de usuários")
 class UsuarioRepositoryTest {
 
     @Autowired
@@ -53,7 +51,7 @@ class UsuarioRepositoryTest {
     }
 
     @Test
-    @DisplayName("findByEmailIgnoreCase acha o usuario sem diferenciar maiuscula de minuscula")
+    @DisplayName("findByEmailIgnoreCase acha o usuário sem diferenciar maiuscula de minuscula")
     void achaPeloEmail() {
         assertThat(repository.findByEmailIgnoreCase("ADMIN@dda.com.br"))
                 .get()
@@ -79,7 +77,7 @@ class UsuarioRepositoryTest {
     }
 
     @Test
-    @DisplayName("ativo=false lista so os inativados")
+    @DisplayName("ativo=false lista só os inativados")
     void listaInativos() {
         Page<Usuario> pagina = repository.buscar("", false, primeiraPagina);
 
@@ -96,7 +94,7 @@ class UsuarioRepositoryTest {
     }
 
     @Test
-    @DisplayName("conta so os administradores ativos")
+    @DisplayName("conta só os administradores ativos")
     void contaAdministradoresAtivos() {
         assertThat(repository.countByPerfilAndAtivoTrue(PerfilUsuario.ADMIN)).isEqualTo(1);
         assertThat(repository.countByPerfilAndAtivoTrue(PerfilUsuario.OPERADOR)).isEqualTo(1);

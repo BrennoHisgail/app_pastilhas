@@ -6,17 +6,17 @@ import br.com.ddametalurgica.estoque.Fabrica;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-@DisplayName("Usuario - regras que ficam na propria entidade")
+@DisplayName("Usuário - regras que ficam na propria entidade")
 class UsuarioTest {
 
     @Test
-    @DisplayName("usuario novo nasce ativo")
+    @DisplayName("usuário novo nasce ativo")
     void nasceAtivo() {
         assertThat(new Usuario().isAtivo()).isTrue();
     }
 
     @Test
-    @DisplayName("inativar e reativar mudam so a flag")
+    @DisplayName("inativar e reativar mudam só a flag")
     void inativarEReativar() {
         Usuario usuario = Fabrica.usuario("teste@dda.com.br");
         assertThat(usuario.isAtivo()).isTrue();

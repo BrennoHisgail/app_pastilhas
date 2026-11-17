@@ -25,6 +25,8 @@ spring:
     locations: classpath:db/migration
 
 springdoc:
+  # Chaves em ordem alfabetica: o docs/openapi.yaml exportado fica estavel
+  writer-with-order-by-keys: true
   swagger-ui:
     path: /swagger-ui.html
     operations-sorter: method

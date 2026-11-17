@@ -26,7 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("DashboardService - numeros do painel")
+@DisplayName("DashboardService - números do painel")
 class DashboardServiceTest {
 
     @Mock
@@ -39,7 +39,7 @@ class DashboardServiceTest {
     private DashboardService service;
 
     @Test
-    @DisplayName("junta os contadores, os alertas e as ultimas movimentacoes numa resposta so")
+    @DisplayName("junta os contadores, os alertas e as últimas movimentações numa resposta só")
     void montaIndicadores() {
         Pastilha emFalta = Fabrica.comId(
                 Fabrica.pastilha("A1", new BigDecimal("5"), new BigDecimal("20")), 1L);
@@ -66,7 +66,7 @@ class DashboardServiceTest {
     }
 
     @Test
-    @DisplayName("o contador de movimentacoes olha os ultimos 30 dias")
+    @DisplayName("o contador de movimentações olha os últimos 30 dias")
     void contaUltimos30Dias() {
         when(pastilhaRepository.listarAbaixoDoMinimo(any(Pageable.class))).thenReturn(List.of());
         when(movimentacaoRepository.findTop8ByOrderByDataHoraDesc()).thenReturn(List.of());
@@ -81,7 +81,7 @@ class DashboardServiceTest {
     }
 
     @Test
-    @DisplayName("o painel mostra no maximo 10 alertas")
+    @DisplayName("o painel mostra no máximo 10 alertas")
     void limitaAlertasDoPainel() {
         when(pastilhaRepository.listarAbaixoDoMinimo(any(Pageable.class))).thenReturn(List.of());
         when(movimentacaoRepository.findTop8ByOrderByDataHoraDesc()).thenReturn(List.of());
@@ -95,7 +95,7 @@ class DashboardServiceTest {
     }
 
     @Test
-    @DisplayName("a tela de reposicao escolhe quantos itens quer ver")
+    @DisplayName("a tela de reposição escolhe quantos itens quer ver")
     void alertasComLimiteProprio() {
         when(pastilhaRepository.listarAbaixoDoMinimo(any(Pageable.class))).thenReturn(List.of());
 

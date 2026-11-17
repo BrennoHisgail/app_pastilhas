@@ -1,11 +1,7 @@
 <!doctype html>
 <html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
 
-<!--
-  Pedaços de HTML que se repetem em todas as telas: o cabeçalho,
-  o menu e o rodapé. As outras páginas chamam com th:replace
-  para não precisar copiar e colar em cada arquivo.
--->
+<!-- Fragmentos comuns a todas as telas (head, menu e rodape), incluidos com th:replace -->
 
 <head th:fragment="head(titulo)">
     <meta charset="UTF-8">
@@ -19,10 +15,10 @@
     <link rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&amp;family=IBM+Plex+Mono:wght@500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
     <link rel="stylesheet" th:href="@{/css/app.css}">
-    <!-- O api.js le estes dois para mandar o token CSRF nas chamadas que alteram dados -->
+    <!-- Token CSRF lido pelo api.js nas requisicoes que alteram dados -->
     <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
     <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
-    <!-- O JS usa para esconder os botoes que so o ADMIN pode usar -->
+    <!-- Perfil do usuario, usado pelo JS para ocultar acoes de ADMIN -->
     <meta name="perfil" th:if="${usuarioLogado != null}"
           th:content="${usuarioLogado.admin} ? 'ADMIN' : 'OPERADOR'">
 </head>
@@ -83,7 +79,7 @@
     </label>
 </footer>
 
-<!-- Caixa que pergunta antes de inativar, mais bonita que o confirm() -->
+<!-- Dialogo de confirmacao usado antes de inativar (substitui o confirm() nativo) -->
 <dialog class="dialogo" id="dialogoConfirma" th:fragment="dialogo">
     <form method="dialog" class="dialogo__caixa">
         <h2 class="dialogo__titulo" id="dialogoTitulo">Confirmar</h2>

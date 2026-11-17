@@ -12,7 +12,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// Monta os numeros que aparecem no painel inicial
+// Agrega os dados do painel inicial
 @Service
 public class DashboardService {
 
@@ -52,7 +52,7 @@ public class DashboardService {
                 recentes);
     }
 
-    // Lista so os itens em falta, usado pela tela de reposicao
+    // Itens em falta, limitados pela quantidade pedida
     @Transactional(readOnly = true)
     public List<PastilhaResponse> alertasReposicao(int limite) {
         return pastilhaRepository

@@ -93,7 +93,7 @@ class DashboardControllerTest {
         for (String limite : List.of("0", "-1")) {
             mvc.perform(get("/api/alertas/reposicao").param("limite", limite))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.title").value("Dados invalidos"))
+                    .andExpect(jsonPath("$.title").value("Dados inválidos"))
                     .andExpect(jsonPath("$.erros.limite").exists());
         }
 
@@ -101,7 +101,7 @@ class DashboardControllerTest {
     }
 
     @Test
-    @DisplayName("limite absurdo devolve 400, para nao puxar o catalogo inteiro")
+    @DisplayName("limite absurdo devolve 400, para não puxar o catálogo inteiro")
     void recusaLimiteGrandeDemais() throws Exception {
         mvc.perform(get("/api/alertas/reposicao").param("limite", "5000"))
                 .andExpect(status().isBadRequest())
@@ -109,7 +109,7 @@ class DashboardControllerTest {
     }
 
     @Test
-    @DisplayName("limite que nao e numero devolve 400")
+    @DisplayName("limite que não é número devolve 400")
     void recusaLimiteNaoNumerico() throws Exception {
         mvc.perform(get("/api/alertas/reposicao").param("limite", "muitos"))
                 .andExpect(status().isBadRequest());

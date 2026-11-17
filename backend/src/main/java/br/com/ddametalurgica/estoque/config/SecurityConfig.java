@@ -19,7 +19,7 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 @Configuration
 public class SecurityConfig {
 
-    // Criptografa a senha no cadastro e confere a senha no login
+    // BCrypt: gera o hash no cadastro e valida a senha no login
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -32,7 +32,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/login", "/css/**", "/js/**", "/favicon.svg",
-                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/error").permitAll()
+                                "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml", "/error").permitAll()
 
                         // Pastilhas: qualquer um que esteja logado consulta;
                         // so ADMIN cadastra, edita, inativa ou muda o nivel minimo
@@ -52,7 +52,7 @@ public class SecurityConfig {
                         .requestMatchers("/usuarios/**").hasRole("ADMIN")
                         .requestMatchers("/", "/pastilhas", "/movimentacoes", "/indicadores").authenticated()
 
-                        // Qualquer coisa nova que alguem adicionar depois fica fechada por padrao
+                        // Rotas nao listadas exigem login (fechado por padrao)
                         .anyRequest().authenticated())
 
                 .formLogin(form -> form
@@ -65,8 +65,8 @@ public class SecurityConfig {
                         .logoutSuccessUrl("/login?saiu=true")
                         .deleteCookies("JSESSIONID"))
 
-                // Na API devolve 401/403 em vez de mandar para a tela de login,
-                // assim o api.js consegue saber que a sessao expirou
+                // Na API: 401/403 em JSON em vez de redirecionar para o login,
+                // para o api.js detectar a sessao expirada
                 .exceptionHandling(ex -> ex
                         .defaultAuthenticationEntryPointFor(
                                 new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED), apiMatcher)
@@ -77,15 +77,16 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Mesmo formato de erro que o ApiExceptionHandler usa no resto da API
+    // 403 no mesmo formato ProblemDetail do ApiExceptionHandler
     private void acessoNegadoEmJson(jakarta.servlet.http.HttpServletRequest requisicao,
                                      jakarta.servlet.http.HttpServletResponse resposta,
                                      org.springframework.security.access.AccessDeniedException excecao)
             throws IOException {
         resposta.setStatus(HttpStatus.FORBIDDEN.value());
         resposta.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        resposta.setCharacterEncoding("UTF-8");
         resposta.getWriter().write(
                 "{\"title\":\"Acesso negado\",\"status\":403,"
-                        + "\"detail\":\"Voce nao tem permissao para esta acao.\"}");
+                        + "\"detail\":\"Você não tem permissão para esta ação.\"}");
     }
 }

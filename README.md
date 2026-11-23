@@ -19,6 +19,9 @@ Equipe: Brenno Meurer, Vinícius Barcellos, Pedro Ptelzi e Pedro Luis
 | Segurança | Spring Security (login por sessão, perfis ADMIN e OPERADOR, senha em BCrypt) |
 | Telas | Thymeleaf + CSS próprio |
 | Documentação da API | springdoc-openapi (Swagger UI) |
+| API Gateway | NGINX (load balance e failover entre duas instâncias) |
+| Sessão compartilhada | Spring Session JDBC (o login fica no PostgreSQL) |
+| Publicação | Docker Compose numa AWS EC2 |
 
 ## Como executar
 
@@ -103,16 +106,19 @@ Além desses, dois testes sobem a aplicação inteira:
 - `MigracaoFlywayTest` — sobe do jeito que sobe em produção, com o Flyway criando
   as tabelas e o Hibernate conferindo (`ddl-auto: validate`). Se alguém mexer numa
   entidade e esquecer a migration, quebra aqui e não na hora de publicar.
+- `SessaoNoBancoTest` — faz login e confere que a sessão foi gravada no banco e que
+  só o cookie basta para continuar logado. É o que garante o failover sem perder o login.
 
 ## Publicar na AWS EC2
 
 O projeto tem o `Dockerfile` (compila com o Maven e copia só o `.jar` para uma
-imagem menor) e o `docker-compose.yml`, que sobe a aplicação junto com o PostgreSQL.
+imagem menor) e o `docker-compose.yml`, que sobe o NGINX (gateway), duas instâncias
+da aplicação e o PostgreSQL (veja [API Gateway e failover](#api-gateway-e-failover)).
 No servidor não precisa instalar Java nem banco, só o Docker.
 
-1. Na AWS, crie uma instância EC2 com **Amazon Linux 2023**. A `t3.small` (2 GB) é a
-   mais segura; a `t2.micro`/`t3.micro` do nível gratuito funciona, mas o build fica
-   lento e pode faltar memória.
+1. Na AWS, crie uma instância EC2 com **Amazon Linux 2023**. Use a `t3.small` (2 GB):
+   são duas JVMs, o PostgreSQL e o NGINX na mesma máquina. A `t2.micro`/`t3.micro` do
+   nível gratuito (1 GB) só funciona com o swap abaixo, e fica lenta.
 2. No grupo de segurança, libere a porta **22** (SSH, só para o seu IP) e a porta
    **80** (HTTP, para todos).
 3. Entre no servidor por SSH e instale o Docker e o Git:
@@ -147,13 +153,51 @@ No servidor não precisa instalar Java nem banco, só o Docker.
    ```
 
 5. Depois de uns minutos o sistema abre em `http://IP-PUBLICO-DA-INSTANCIA/`.
-   Para acompanhar a subida: `docker compose logs -f app`.
+   Para acompanhar a subida: `docker compose logs -f app1 app2`.
 
 Para atualizar depois de um `git push`: `git pull && docker compose up -d --build`.
 Os dados do banco ficam num volume do Docker e não se perdem na atualização.
 
 **Antes de apresentar:** entre como `admin@dda.com.br` e troque a senha dos dois
 usuários de demonstração na tela **Usuários**, porque elas estão escritas neste README.
+
+## API Gateway e failover
+
+O sistema roda com **duas instâncias** da aplicação atrás de um **NGINX**, que faz o
+papel de API Gateway:
+
+```
+                          +--> app1 (:8080) --+
+navegador --> nginx:80 ---|                   +--> banco (PostgreSQL)
+             (gateway)    +--> app2 (:8080) --+
+```
+
+- **Gateway:** o NGINX é a única porta aberta para fora (80). As instâncias ficam só
+  na rede interna do Docker. A configuração está em `backend/nginx/nginx.conf`.
+- **Load balance:** o `upstream` alterna as requisições entre `app1` e `app2`
+  (round-robin). O cabeçalho de resposta `X-Servidor` mostra qual instância atendeu
+  (F12 > Rede no navegador), e `docker compose logs -f nginx` mostra o mesmo no log.
+- **Failover:** com `max_fails=2 fail_timeout=10s`, a instância que falha sai da lista
+  por 10 segundos; com `proxy_next_upstream`, a requisição que falhou é repetida na
+  outra. Um `POST` que já chegou à instância não é repetido, para não lançar a mesma
+  movimentação duas vezes.
+- **Sessão no banco:** o login fica no PostgreSQL (Spring Session JDBC, tabelas da
+  migration V6), não na memória da instância. Por isso o usuário continua logado
+  quando a outra instância assume.
+
+Para demonstrar (no servidor, dentro de `backend/`):
+
+```bash
+docker compose stop app1     # o sistema continua funcionando, e logado, pela app2
+docker compose stop app2     # sem nenhuma instância: o NGINX responde 502
+docker compose start app1 app2
+```
+
+O que esta arquitetura **não** cobre: o banco e o próprio NGINX continuam sendo
+pontos únicos de falha, e as duas instâncias estão na mesma máquina (protege contra
+a queda da aplicação, não do servidor). Para isso seria preciso réplica do
+PostgreSQL, um balanceador gerenciado (ELB da AWS) e instâncias em outras máquinas,
+o que fica fora do escopo do MVP.
 
 ## Organização das pastas
 
@@ -169,6 +213,7 @@ backend/src/main/java/br/com/ddametalurgica/estoque/
 ├── dto/             records usados para entrada e saída da API
 └── exception/       tratamento de erro da API
 
+backend/nginx/nginx.conf                   configuração do API Gateway
 backend/src/main/resources/db/migration/   scripts do Flyway
 backend/src/main/resources/templates/      telas em Thymeleaf
 backend/src/main/resources/static/         CSS e JavaScript
@@ -225,6 +270,14 @@ backend, então o login clássico do Spring Security (formulário + cookie de se
 caminho mais simples. Como cookie de sessão é vulnerável a CSRF, a proteção de CSRF
 fica ligada: o layout coloca o token numa `<meta>` e o `api.js` manda ele em toda
 chamada que altera dados.
+
+**A sessão de login fica no banco.** Com duas instâncias, a sessão guardada na memória
+de uma não existiria na outra, e o usuário cairia no login a cada troca. Avaliamos
+três saídas: *sticky session* no NGINX (cada usuário preso a uma instância, mas perde
+o login se ela cair), token JWT (exigiria refazer o login das telas e o CSRF) e
+guardar a sessão no PostgreSQL com o Spring Session JDBC. Ficamos com a última, que
+não mudou nenhuma tela nem regra: só uma dependência, uma migration e o `Usuario`
+passando a ser `Serializable`, porque a sessão é gravada em bytes.
 
 **A permissão é conferida no backend, não só na tela.** O operador não vê os botões de
 cadastro, mas mesmo que chame a API direto recebe 403. As regras ficam todas juntas

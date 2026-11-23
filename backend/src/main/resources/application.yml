@@ -24,6 +24,13 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+  # Sessao de login gravada no PostgreSQL (Spring Session JDBC), para as
+  # duas instancias atras do NGINX enxergarem o mesmo login.
+  # never: quem cria as tabelas e o Flyway (V6__sessoes_http.sql).
+  session:
+    jdbc:
+      initialize-schema: never
+
 springdoc:
   # Chaves em ordem alfabetica: o docs/openapi.yaml exportado fica estavel
   writer-with-order-by-keys: true
@@ -36,6 +43,18 @@ server:
   # Em producao o servico define a porta pela variavel PORT.
   # Rodando na nossa maquina nao existe essa variavel, entao usa 8080.
   port: ${PORT:8080}
+
+  # A aplicacao roda atras do NGINX. "native" faz o Tomcat ler os
+  # cabecalhos X-Forwarded-* que o NGINX envia, para os redirecionamentos
+  # (login, logout) usarem o endereco que o usuario digitou.
+  forward-headers-strategy: native
+
+  servlet:
+    session:
+      cookie:
+        # O Spring Session chamaria o cookie de "SESSION". Mantemos o nome
+        # de sempre: o logout e a documentacao da API usam JSESSIONID.
+        name: JSESSIONID
 
 logging:
   level:

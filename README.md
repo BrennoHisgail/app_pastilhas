@@ -127,16 +127,27 @@ No servidor não precisa instalar Java nem banco, só o Docker.
    sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
    ```
 
+   Se a instância tiver só 1 GB (`t2.micro`/`t3.micro`), crie 2 GB de swap antes do
+   build, senão o Maven pode ser encerrado por falta de memória:
+
+   ```bash
+   sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+   sudo chmod 600 /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile
+   echo '/swapfile swap swap defaults 0 0' | sudo tee -a /etc/fstab
+   ```
+
 4. Baixe o projeto, defina a senha do banco e suba:
 
    ```bash
    git clone https://github.com/BrennoHisgail/app_pastilhas.git
    cd app_pastilhas/backend
-   echo "DB_PASSWORD=troque-esta-senha" > .env
+   cp .env.example .env
+   nano .env                 # troque a senha antes do primeiro "up"
    docker compose up -d --build
    ```
 
 5. Depois de uns minutos o sistema abre em `http://IP-PUBLICO-DA-INSTANCIA/`.
+   Para acompanhar a subida: `docker compose logs -f app`.
 
 Para atualizar depois de um `git push`: `git pull && docker compose up -d --build`.
 Os dados do banco ficam num volume do Docker e não se perdem na atualização.

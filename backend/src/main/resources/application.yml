@@ -39,4 +39,6 @@ server:
 
 logging:
   level:
-    br.com.ddametalurgica.estoque: DEBUG
+    # INFO no servidor para nao encher o disco de log.
+    # Para investigar algo na nossa maquina: LOG_LEVEL=DEBUG
+    br.com.ddametalurgica.estoque: ${LOG_LEVEL:INFO}

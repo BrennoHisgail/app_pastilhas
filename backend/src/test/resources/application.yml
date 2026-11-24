@@ -31,6 +31,18 @@ spring:
     init:
       mode: never
 
+  # Sessao de login no banco, como em producao. No H2 o proprio Spring
+  # Session cria as tabelas (em producao quem cria e o Flyway, na V6).
+  session:
+    jdbc:
+      initialize-schema: embedded
+
+server:
+  servlet:
+    session:
+      cookie:
+        name: JSESSIONID
+
 springdoc:
   # Mesma ordenacao do application.yml principal (o ContratoOpenApiTest exporta o contrato)
   writer-with-order-by-keys: true

@@ -44,6 +44,14 @@
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
 
+        <!-- Guarda a sessao de login no PostgreSQL em vez da memoria do app.
+             Com duas instancias atras do NGINX, qualquer uma reconhece o
+             usuario logado, e a sessao sobrevive se uma delas cair. -->
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-jdbc</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>

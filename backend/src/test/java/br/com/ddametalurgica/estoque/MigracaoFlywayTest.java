@@ -20,6 +20,8 @@ import org.springframework.test.context.TestPropertySource;
 @TestPropertySource(properties = {
         "spring.flyway.enabled=true",
         "spring.jpa.hibernate.ddl-auto=validate",
+        // como em producao: as tabelas de sessao vem da V6, nao do Spring Session
+        "spring.session.jdbc.initialize-schema=never",
         "spring.datasource.url=jdbc:h2:mem:estoque_migracao;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1"
 })
 @DisplayName("Migrations do Flyway")
@@ -41,7 +43,7 @@ class MigracaoFlywayTest {
                 "SELECT version FROM flyway_schema_history "
                         + "WHERE version IS NOT NULL AND success = TRUE ORDER BY installed_rank",
                 String.class))
-                .containsExactly("1", "2", "3", "4", "5");
+                .containsExactly("1", "2", "3", "4", "5", "6");
 
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM pastilha", Integer.class))
                 .isEqualTo(12);
@@ -49,6 +51,10 @@ class MigracaoFlywayTest {
                 .isZero();
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM usuario", Integer.class))
                 .isEqualTo(2);
+
+        // tabelas da sessao de login (V6) existem e nascem vazias
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM spring_session", Integer.class))
+                .isZero();
 
         // a massa de exemplo precisa nascer com itens em falta, senao a
         // tela de alertas abre vazia na apresentacao

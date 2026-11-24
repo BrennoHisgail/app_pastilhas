@@ -1,9 +1,26 @@
-# Sobe o sistema inteiro (aplicacao + PostgreSQL) com um comando so:
+# Sobe o sistema inteiro com um comando so:
 #
 #   docker compose up -d --build
 #
 # Usado no servidor da AWS EC2. A senha do banco vem do arquivo .env
 # (que nao vai para o git); sem ele, usa "estoque" como padrao.
+#
+# Arquitetura:
+#
+#                          +--> app1 (:8080) --+
+#   navegador --> nginx:80 |                   +--> banco (PostgreSQL)
+#                (gateway) +--> app2 (:8080) --+
+#
+# - nginx: API Gateway, unica porta aberta para fora. Divide as
+#   requisicoes entre app1 e app2 e, se uma cair, manda tudo para a outra.
+# - app1 e app2: duas copias identicas da aplicacao (mesma imagem e
+#   mesmo banco). A sessao de login fica no banco, entao tanto faz qual
+#   instancia atende.
+#
+# Para demonstrar o failover:
+#   docker compose stop app1      -> o sistema continua, pela app2
+#   docker compose stop app2      -> sem nenhuma instancia: 502 Bad Gateway
+#   docker compose start app1 app2
 
 services:
 
@@ -22,8 +39,9 @@ services:
       interval: 5s
       retries: 10
 
-  app:
+  app1:
     build: .
+    image: controle-estoque
     restart: unless-stopped
     depends_on:
       banco:
@@ -33,10 +51,39 @@ services:
       DB_NAME: estoque
       DB_USER: estoque
       DB_PASSWORD: ${DB_PASSWORD:-estoque}
-    # Porta 80 do servidor aponta para a 8080 da aplicacao,
-    # assim o endereco fica so http://IP-DO-SERVIDOR/
+      # Limite fixo de memoria: sao duas JVMs no mesmo servidor
+      JAVA_OPTS: -Xmx384m
+    # Sem "ports": ninguem de fora acessa a instancia direto, so pelo nginx
+
+  app2:
+    # Mesma imagem do app1, ja construida por ele
+    image: controle-estoque
+    restart: unless-stopped
+    depends_on:
+      banco:
+        condition: service_healthy
+      # espera o app1 subir primeiro: o Flyway roda nele, e a imagem
+      # e construida por ele
+      app1:
+        condition: service_started
+    environment:
+      DB_HOST: banco
+      DB_NAME: estoque
+      DB_USER: estoque
+      DB_PASSWORD: ${DB_PASSWORD:-estoque}
+      JAVA_OPTS: -Xmx384m
+
+  nginx:
+    image: nginx:1.27
+    restart: unless-stopped
+    depends_on:
+      - app1
+      - app2
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    # Porta 80 do servidor: o endereco fica so http://IP-DO-SERVIDOR/
     ports:
-      - "80:8080"
+      - "80:80"
 
 volumes:
   dados-banco:
